@@ -243,7 +243,7 @@ riscv = &quot;0.10&quot;</code></pre></pre>
 
     println!(&quot;Load payload ok!\n&quot;);</code></pre></pre>
 <blockquote>
-<p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font></p>
+<p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font>。</p>
 </blockquote>
 <p>执行 <code>make run</code>，系统异常 <strong>STORE_FAULT</strong>，因为没有启用应用的地址空间映射。</p>
 </li>
