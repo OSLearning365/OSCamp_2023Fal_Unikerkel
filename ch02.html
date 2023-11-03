@@ -1,0 +1,303 @@
+<!DOCTYPE HTML>
+<html lang="cn" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>实验2：把应用拷贝到执行区域并执行 - unikernel practical tutorial</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch00.html"><strong aria-hidden="true">1.</strong> 前言</a></li><li class="chapter-item expanded "><a href="ch01.html"><strong aria-hidden="true">2.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch02.html" class="active"><strong aria-hidden="true">3.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch03.html"><strong aria-hidden="true">4.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch04.html"><strong aria-hidden="true">5.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch05.html"><strong aria-hidden="true">6.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">unikernel practical tutorial</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/unikernel-practical-tutorial" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h2 id="实验2把应用拷贝到执行区域并执行"><a class="header" href="#实验2把应用拷贝到执行区域并执行">实验2：把应用拷贝到执行区域并执行</a></h2>
+<h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
+<p>目前应用已经被加载到 pflash 的地址区间内，但是处于只读状态，一旦执行到写数据的指令时，就会触发异常。</p>
+<p>所以本实验的目标就是把应用搬运到可读可写可执行的内存区域。</p>
+<div style="text-align:center">
+   <img src=".\img\p2.svg" alt="p2" style="zoom:100%"/>
+</div>
+<h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
+<ol>
+<li>
+<p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的main.rs。</p>
+<pre><pre class="playground"><code class="language-rust editable edition2021">fn main() {
+    let load_start = PLASH_START as *const u8;
+    let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
+
+    println!(&quot;Load payload ...&quot;);
+
+    let load_code = unsafe { core::slice::from_raw_parts(load_start, load_size) };
+    println!(&quot;load code {:?}; address [{:?}]&quot;, load_code, load_code.as_ptr());
+
+    // app running aspace
+    // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
+    // 0xffff_ffc0_0000_0000
+    const RUN_START: usize = 0xffff_ffc0_8010_0000;
+
+    let run_code = unsafe {
+        core::slice::from_raw_parts_mut(RUN_START as *mut u8, load_size)
+    };
+    run_code.copy_from_slice(load_code);
+    println!(&quot;run code {:?}; address [{:?}]&quot;, run_code, run_code.as_ptr());
+
+    println!(&quot;Load payload ok!&quot;);
+}</code></pre></pre>
+<p><code>make run</code> 显示正常，代码被拷贝到目标区域。</p>
+</li>
+<li>
+<p>然后从新的位置开始执行 App 的逻辑，在上面 main 函数的末尾追加代码执行。</p>
+<pre><pre class="playground"><code class="language-rust editable edition2021">    println!(&quot;Execute app ...&quot;);
+
+    // execute app
+    unsafe { core::arch::asm!(&quot;
+        li      t2, {run_start}
+        jalr    t2
+        j       .&quot;,
+        run_start = const RUN_START,
+    )}</code></pre></pre>
+<p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
+</li>
+<li>
+<p>要想知道是否成功，需要通过查看 qemu.log 进行判断。ArceOS 支持输出这种日志，为方便，直接改 Makefile 默认项。</p>
+<pre><code class="language-make">-QEMU_LOG ?= n
++QEMU_LOG ?= y
+</code></pre>
+<p>再次 <code>make run</code>，查看当前产生 qemu.log，</p>
+<pre><code class="language-x86asm">IN:
+Priv: 1; Virt: 0
+0xffffffc080100000:  10500073          wfi
+0xffffffc080100004:  0000              illegal
+</code></pre>
+<p>可以看到，我们确实执行到了 App 的唯一一行代码 <code>wfi</code>。</p>
+</li>
+</ol>
+<h3 id="练习"><a class="header" href="#练习">练习</a></h3>
+<h4 id="练习-3"><a class="header" href="#练习-3">练习 3：</a></h4>
+<p>批处理方式执行两个单行代码应用，第一个应用的单行代码是 <code>noop</code>，第二个的是 <code>wfi</code>。</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch01.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="ch03.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch01.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="ch03.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+        <script>
+            window.playground_line_numbers = true;
+        </script>
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+        <script src="ace.js"></script>
+        <script src="editor.js"></script>
+        <script src="mode-rust.js"></script>
+        <script src="theme-dawn.js"></script>
+        <script src="theme-tomorrow_night.js"></script>
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="mermaid.min.js"></script>
+        <script src="mermaid-init.js"></script>
+
+
+    </div>
+    </body>
+</html>
