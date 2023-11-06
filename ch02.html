@@ -185,7 +185,7 @@
 <ol>
 <li>
 <p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的main.rs。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">fn main() {
+<pre><pre class="playground"><code class="language-rust edition2021">fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
@@ -211,7 +211,9 @@
 </li>
 <li>
 <p>然后从新的位置开始执行 App 的逻辑，在上面 main 函数的末尾追加代码执行。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">    println!(&quot;Execute app ...&quot;);
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    println!(&quot;Execute app ...&quot;);
 
     // execute app
     unsafe { core::arch::asm!(&quot;
@@ -219,7 +221,8 @@
         jalr    t2
         j       .&quot;,
         run_start = const RUN_START,
-    )}</code></pre></pre>
+    )}
+<span class="boring">}</span></code></pre></pre>
 <p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
 </li>
 <li>

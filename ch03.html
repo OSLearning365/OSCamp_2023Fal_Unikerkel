@@ -184,7 +184,9 @@
 <ol>
 <li>
 <p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">const SYS_HELLO: usize = 1;
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
 static mut ABI_TABLE: [usize; 16] = [0; 16];
@@ -199,11 +201,14 @@ fn abi_hello() {
 
 fn abi_putchar(c: char) {
     println!(&quot;[ABI:Print] {c}&quot;);
-}</code></pre></pre>
+}
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
 <p>在 ArceOS 内嵌应用 loader 中，测试按照调用号调用 ABI 功能。我们可以分别测试一下两个功能。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">    register_abi(SYS_HELLO, abi_hello as usize);
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
 	println!(&quot;Execute app ...&quot;);
@@ -225,7 +230,8 @@ fn abi_putchar(c: char) {
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
         in(&quot;a0&quot;) arg0,
-    )}</code></pre></pre>
+    )}
+<span class="boring">}</span></code></pre></pre>
 <p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。执行结果如下：</p>
 <pre><code class="language-bash">arch = riscv64
 platform = riscv64-qemu-virt

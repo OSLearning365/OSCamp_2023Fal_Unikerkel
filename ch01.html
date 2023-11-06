@@ -184,10 +184,12 @@
 <ol>
 <li>
 <p>编写一个 no_std 应用作为实验对象，命名为 hello_app，目录与 arceos 目录并列。它的主文件 main.rs 如下：</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">#![no_std]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span>#![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
+<span class="boring">fn main() {
+</span>use core::panic::PanicInfo;
 
 #[no_mangle]
 unsafe extern &quot;C&quot; fn _start() -&gt; ! {
@@ -200,16 +202,20 @@ unsafe extern &quot;C&quot; fn _start() -&gt; ! {
 #[panic_handler]
 fn panic(_info: &amp;PanicInfo) -&gt; ! {
     loop {}
-}</code></pre></pre>
+}
+<span class="boring">}</span></code></pre></pre>
 <p>现在只有一行代码 <code>wfi</code>。</p>
 </li>
 <li>
 <p>在 hello_app 根目录下加一个 rust-toolchain.toml，内容如下：</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">[toolchain]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>[toolchain]
 profile = &quot;minimal&quot;
 channel = &quot;nightly&quot;
 components = [&quot;rust-src&quot;, &quot;llvm-tools-preview&quot;, &quot;rustfmt&quot;, &quot;clippy&quot;]
-targets = [&quot;riscv64gc-unknown-none-elf&quot;]</code></pre></pre>
+targets = [&quot;riscv64gc-unknown-none-elf&quot;]
+<span class="boring">}</span></code></pre></pre>
 <p>定制默认的 toolchain，关键是指定 target = &quot;riscv64gc-unknown-none-elf&quot;，即 riscv64 体系结构的裸机程序。</p>
 </li>
 <li>
@@ -228,7 +234,7 @@ mv ./apps.bin ../arceos/payload/apps.bin
 </li>
 <li>
 <p>进入 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
+<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
 #![cfg_attr(feature = &quot;axstd&quot;, no_main)]
 
 #[cfg(feature = &quot;axstd&quot;)]
@@ -255,7 +261,9 @@ fn main() {
 <li>
 <p>ArceOS 目前没有对 pflash 所在的地址空间进行映射，增加映射。</p>
 <p>在文件 modules/axhal/src/platform/riscv64_qemu_virt/boot.rs 中，恒等映射从 0 开始的 1G 空间。</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">unsafe fn init_boot_page_table() {
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>unsafe fn init_boot_page_table() {
     // 0x8000_0000..0xc000_0000, VRWX_GAD, 1G block
     BOOT_PT_SV39[2] = (0x80000 &lt;&lt; 10) | 0xef;
     // 0xffff_ffc0_8000_0000..0xffff_ffc0_c000_0000, VRWX_GAD, 1G block
@@ -263,14 +271,15 @@ fn main() {
 
     // 0x0000_0000..0x4000_0000, VRWX_GAD, 1G block
     BOOT_PT_SV39[0] = (0x00000 &lt;&lt; 10) | 0xef;
-}</code></pre></pre>
+}
+<span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p><font size=2>注意：只有最后两行是我们新增的映射，这样 ArceOS 就可以访问 pflash 所在的地址空间。</font></p>
 </blockquote>
 </li>
 <li>
 <p>现在可以编译 ArceOS 了，修改一下 Makefile 的默认参数。看一下修改前后 diff 的结果：</p>
-<pre><code class="language-makefile editable"> # General options
+<pre><code class="language-makefile"> # General options
 -ARCH ?= x86_64
 +ARCH ?= riscv64
 
@@ -283,7 +292,7 @@ fn main() {
 <li>
 <p>修改一下 qemu 的启动参数，让 pflash 加载之前的 image 就是那个 apps.bin，然后启动 ArceOS 内核及 loader 应用。</p>
 <p>修改 scripts/make/qemu.mk，在 qemu 启动参数中加上一项：</p>
-<pre><code class="language-makefile editable">-drive if=pflash,file=$(CURDIR)/payload/apps.bin,format=raw,unit=1
+<pre><code class="language-makefile">-drive if=pflash,file=$(CURDIR)/payload/apps.bin,format=raw,unit=1
 </code></pre>
 </li>
 <li>

@@ -184,7 +184,9 @@
 <ol>
 <li>
 <p>在 loader 的 main 函数中，把直接调用 abi 的代码删除，改为如下代码：</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">    println!(&quot;Execute app ...&quot;);
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    println!(&quot;Execute app ...&quot;);
 
     // execute app
     unsafe { core::arch::asm!(&quot;
@@ -194,16 +196,19 @@
         j       .&quot;,
         run_start = const RUN_START,
         abi_table = sym ABI_TABLE,
-    )}</code></pre></pre>
+    )}
+<span class="boring">}</span></code></pre></pre>
 <p>loader 不再调用 abi，只是把 ABI_TABLE 的地址传给外部应用 hello_app。注意：我们传递地址用的是 a7 寄存器。</p>
 </li>
 <li>
 <p>应用 hello_app 通过 ABI 获取 ArceOS 服务的实现：</p>
-<pre><pre class="playground"><code class="language-rust editable edition2021">#![feature(asm_const)]
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span>#![feature(asm_const)]
 #![no_std]
 #![no_main]
 
-//const SYS_HELLO: usize = 1;
+<span class="boring">fn main() {
+</span>//const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
 #[no_mangle]
@@ -227,7 +232,8 @@ use core::panic::PanicInfo;
 #[panic_handler]
 fn panic(_info: &amp;PanicInfo) -&gt; ! {
     loop {}
-}</code></pre></pre>
+}
+<span class="boring">}</span></code></pre></pre>
 <p>可以看到，我们从 a7 寄存器获得了 ABI_TABLE 的基地址，再结合调用号就可以获得对应功能的入口。</p>
 <blockquote>
 <p><font size=2>   注意：调用号乘以 8 才是偏移（64 位系统的函数指针 8 个字节）。</font></p>
