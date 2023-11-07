@@ -184,9 +184,7 @@
 <ol>
 <li>
 <p>在 loader 中，为应用建立独立的页表(仅有一级)，并实现初始化和切换函数。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>//
+<pre><code class="language-rust ignore">//
 // App aspace
 //
 
@@ -212,35 +210,26 @@ unsafe fn switch_app_aspace() {
     let page_table_root = APP_PT_SV39.as_ptr() as usize - axconfig::PHYS_VIRT_OFFSET;
     satp::set(satp::Mode::Sv39, 0, page_table_root &gt;&gt; 12);
     riscv::asm::sfence_vma_all();
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 <p>APP_PT_SV39 的链接位置 &quot;.data.app_page_table&quot;，定义在 modules/axhal/linker.lds.S 中：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>         _sdata = .;
+<pre><code class="language-rust ignore">         _sdata = .;
          *(.data.boot_page_table)
          . = ALIGN(4K);
          *(.data.app_page_table)
          . = ALIGN(4K);
-         *(.data .data.*)
-<span class="boring">}</span></code></pre></pre>
+         *(.data .data.*)</code></pre>
 <p>紧跟在系统页表位置 *(.data.boot_page_table) 的下面。</p>
 <p>此外，代码中引用了两个外部的 crate：axconfig、riscv，修改loader的Cargo.toml</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>[dependencies]
+<pre><code class="language-rust ignore">[dependencies]
 axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
 axconfig = { path = &quot;../../modules/axconfig&quot; }
 
 [target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;
-<span class="boring">}</span></code></pre></pre>
+riscv = &quot;0.10&quot;</code></pre>
 </li>
 <li>
 <p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，在 loader 的 main 函数中修改如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    // app running aspace
+<pre><code class="language-rust ignore">    // app running aspace
     // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
     // const RUN_START: usize = 0xffff_ffc0_8010_0000;
     // In app aspace: 0x4010_0000 -&gt; 0x8010_0000
@@ -252,8 +241,7 @@ riscv = &quot;0.10&quot;
     run_code.copy_from_slice(load_code);
     println!(&quot;run code [{:?}]; address [{:?}]&quot;, run_code, run_code.as_ptr());
 
-    println!(&quot;Load payload ok!\n&quot;);
-<span class="boring">}</span></code></pre></pre>
+    println!(&quot;Load payload ok!\n&quot;);</code></pre>
 <blockquote>
 <p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font>。</p>
 </blockquote>
@@ -261,12 +249,9 @@ riscv = &quot;0.10&quot;
 </li>
 <li>
 <p>在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。即在上面代码之前先调用下面的两行：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    // switch aspace from kernel to app
+<pre><code class="language-rust ignore">    // switch aspace from kernel to app
     unsafe { init_app_page_table(); }
-    unsafe { switch_app_aspace(); }
-<span class="boring">}</span></code></pre></pre>
+    unsafe { switch_app_aspace(); }</code></pre>
 <p>执行 <code>make run</code>，成功。</p>
 </li>
 </ol>

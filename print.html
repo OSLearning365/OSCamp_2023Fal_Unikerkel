@@ -237,12 +237,10 @@ Load payload ok!
 <ol>
 <li>
 <p>编写一个 no_std 应用作为实验对象，命名为 hello_app，目录与 arceos 目录并列。它的主文件 main.rs 如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span>#![no_std]
+<pre><code class="language-rust ignore">#![no_std]
 #![no_main]
 
-<span class="boring">fn main() {
-</span>use core::panic::PanicInfo;
+use core::panic::PanicInfo;
 
 #[no_mangle]
 unsafe extern &quot;C&quot; fn _start() -&gt; ! {
@@ -255,20 +253,16 @@ unsafe extern &quot;C&quot; fn _start() -&gt; ! {
 #[panic_handler]
 fn panic(_info: &amp;PanicInfo) -&gt; ! {
     loop {}
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 <p>现在只有一行代码 <code>wfi</code>。</p>
 </li>
 <li>
 <p>在 hello_app 根目录下加一个 rust-toolchain.toml，内容如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>[toolchain]
+<pre><code class="language-rust ignore">[toolchain]
 profile = &quot;minimal&quot;
 channel = &quot;nightly&quot;
 components = [&quot;rust-src&quot;, &quot;llvm-tools-preview&quot;, &quot;rustfmt&quot;, &quot;clippy&quot;]
-targets = [&quot;riscv64gc-unknown-none-elf&quot;]
-<span class="boring">}</span></code></pre></pre>
+targets = [&quot;riscv64gc-unknown-none-elf&quot;]</code></pre>
 <p>定制默认的 toolchain，关键是指定 target = &quot;riscv64gc-unknown-none-elf&quot;，即 riscv64 体系结构的裸机程序。</p>
 </li>
 <li>
@@ -287,7 +281,7 @@ mv ./apps.bin ../arceos/payload/apps.bin
 </li>
 <li>
 <p>进入 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
+<pre><code class="language-rust ignore">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
 #![cfg_attr(feature = &quot;axstd&quot;, no_main)]
 
 #[cfg(feature = &quot;axstd&quot;)]
@@ -306,7 +300,7 @@ fn main() {
     println!(&quot;content: {:?}: &quot;, code);
 
     println!(&quot;Load payload ok!&quot;);
-}</code></pre></pre>
+}</code></pre>
 <blockquote>
 <p><font size=2>注意：qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
 </blockquote>
@@ -314,9 +308,7 @@ fn main() {
 <li>
 <p>ArceOS 目前没有对 pflash 所在的地址空间进行映射，增加映射。</p>
 <p>在文件 modules/axhal/src/platform/riscv64_qemu_virt/boot.rs 中，恒等映射从 0 开始的 1G 空间。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>unsafe fn init_boot_page_table() {
+<pre><code class="language-rust ignore">unsafe fn init_boot_page_table() {
     // 0x8000_0000..0xc000_0000, VRWX_GAD, 1G block
     BOOT_PT_SV39[2] = (0x80000 &lt;&lt; 10) | 0xef;
     // 0xffff_ffc0_8000_0000..0xffff_ffc0_c000_0000, VRWX_GAD, 1G block
@@ -324,8 +316,7 @@ fn main() {
 
     // 0x0000_0000..0x4000_0000, VRWX_GAD, 1G block
     BOOT_PT_SV39[0] = (0x00000 &lt;&lt; 10) | 0xef;
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 <blockquote>
 <p><font size=2>注意：只有最后两行是我们新增的映射，这样 ArceOS 就可以访问 pflash 所在的地址空间。</font></p>
 </blockquote>
@@ -386,7 +377,7 @@ Load payload ok!
 <ol>
 <li>
 <p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的main.rs。</p>
-<pre><pre class="playground"><code class="language-rust edition2021">fn main() {
+<pre><code class="language-rust ignore">fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
@@ -407,14 +398,12 @@ Load payload ok!
     println!(&quot;run code {:?}; address [{:?}]&quot;, run_code, run_code.as_ptr());
 
     println!(&quot;Load payload ok!&quot;);
-}</code></pre></pre>
+}</code></pre>
 <p><code>make run</code> 显示正常，代码被拷贝到目标区域。</p>
 </li>
 <li>
 <p>然后从新的位置开始执行 App 的逻辑，在上面 main 函数的末尾追加代码执行。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    println!(&quot;Execute app ...&quot;);
+<pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
 
     // execute app
     unsafe { core::arch::asm!(&quot;
@@ -422,8 +411,7 @@ Load payload ok!
         jalr    t2
         j       .&quot;,
         run_start = const RUN_START,
-    )}
-<span class="boring">}</span></code></pre></pre>
+    )}</code></pre>
 <p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
 </li>
 <li>
@@ -453,9 +441,7 @@ Priv: 1; Virt: 0
 <ol>
 <li>
 <p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>const SYS_HELLO: usize = 1;
+<pre><code class="language-rust ignore">const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
 static mut ABI_TABLE: [usize; 16] = [0; 16];
@@ -470,14 +456,11 @@ fn abi_hello() {
 
 fn abi_putchar(c: char) {
     println!(&quot;[ABI:Print] {c}&quot;);
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 </li>
 <li>
 <p>在 ArceOS 内嵌应用 loader 中，测试按照调用号调用 ABI 功能。我们可以分别测试一下两个功能。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    register_abi(SYS_HELLO, abi_hello as usize);
+<pre><code class="language-rust ignore">    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
 	println!(&quot;Execute app ...&quot;);
@@ -499,8 +482,7 @@ fn abi_putchar(c: char) {
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
         in(&quot;a0&quot;) arg0,
-    )}
-<span class="boring">}</span></code></pre></pre>
+    )}</code></pre>
 <p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。执行结果如下：</p>
 <pre><code class="language-bash">arch = riscv64
 platform = riscv64-qemu-virt
@@ -534,9 +516,7 @@ QEMU: Terminated
 <ol>
 <li>
 <p>在 loader 的 main 函数中，把直接调用 abi 的代码删除，改为如下代码：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    println!(&quot;Execute app ...&quot;);
+<pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
 
     // execute app
     unsafe { core::arch::asm!(&quot;
@@ -546,19 +526,16 @@ QEMU: Terminated
         j       .&quot;,
         run_start = const RUN_START,
         abi_table = sym ABI_TABLE,
-    )}
-<span class="boring">}</span></code></pre></pre>
+    )}</code></pre>
 <p>loader 不再调用 abi，只是把 ABI_TABLE 的地址传给外部应用 hello_app。注意：我们传递地址用的是 a7 寄存器。</p>
 </li>
 <li>
 <p>应用 hello_app 通过 ABI 获取 ArceOS 服务的实现：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span>#![feature(asm_const)]
+<pre><code class="language-rust ignore">#![feature(asm_const)]
 #![no_std]
 #![no_main]
 
-<span class="boring">fn main() {
-</span>//const SYS_HELLO: usize = 1;
+//const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
 #[no_mangle]
@@ -582,8 +559,7 @@ use core::panic::PanicInfo;
 #[panic_handler]
 fn panic(_info: &amp;PanicInfo) -&gt; ! {
     loop {}
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 <p>可以看到，我们从 a7 寄存器获得了 ABI_TABLE 的基地址，再结合调用号就可以获得对应功能的入口。</p>
 <blockquote>
 <p><font size=2>   注意：调用号乘以 8 才是偏移（64 位系统的函数指针 8 个字节）。</font></p>
@@ -618,9 +594,7 @@ QEMU: Terminated
 <ol>
 <li>
 <p>在 loader 中，为应用建立独立的页表(仅有一级)，并实现初始化和切换函数。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>//
+<pre><code class="language-rust ignore">//
 // App aspace
 //
 
@@ -646,35 +620,26 @@ unsafe fn switch_app_aspace() {
     let page_table_root = APP_PT_SV39.as_ptr() as usize - axconfig::PHYS_VIRT_OFFSET;
     satp::set(satp::Mode::Sv39, 0, page_table_root &gt;&gt; 12);
     riscv::asm::sfence_vma_all();
-}
-<span class="boring">}</span></code></pre></pre>
+}</code></pre>
 <p>APP_PT_SV39 的链接位置 &quot;.data.app_page_table&quot;，定义在 modules/axhal/linker.lds.S 中：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>         _sdata = .;
+<pre><code class="language-rust ignore">         _sdata = .;
          *(.data.boot_page_table)
          . = ALIGN(4K);
          *(.data.app_page_table)
          . = ALIGN(4K);
-         *(.data .data.*)
-<span class="boring">}</span></code></pre></pre>
+         *(.data .data.*)</code></pre>
 <p>紧跟在系统页表位置 *(.data.boot_page_table) 的下面。</p>
 <p>此外，代码中引用了两个外部的 crate：axconfig、riscv，修改loader的Cargo.toml</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>[dependencies]
+<pre><code class="language-rust ignore">[dependencies]
 axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
 axconfig = { path = &quot;../../modules/axconfig&quot; }
 
 [target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;
-<span class="boring">}</span></code></pre></pre>
+riscv = &quot;0.10&quot;</code></pre>
 </li>
 <li>
 <p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，在 loader 的 main 函数中修改如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    // app running aspace
+<pre><code class="language-rust ignore">    // app running aspace
     // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
     // const RUN_START: usize = 0xffff_ffc0_8010_0000;
     // In app aspace: 0x4010_0000 -&gt; 0x8010_0000
@@ -686,8 +651,7 @@ riscv = &quot;0.10&quot;
     run_code.copy_from_slice(load_code);
     println!(&quot;run code [{:?}]; address [{:?}]&quot;, run_code, run_code.as_ptr());
 
-    println!(&quot;Load payload ok!\n&quot;);
-<span class="boring">}</span></code></pre></pre>
+    println!(&quot;Load payload ok!\n&quot;);</code></pre>
 <blockquote>
 <p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font>。</p>
 </blockquote>
@@ -695,12 +659,9 @@ riscv = &quot;0.10&quot;
 </li>
 <li>
 <p>在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。即在上面代码之前先调用下面的两行：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    // switch aspace from kernel to app
+<pre><code class="language-rust ignore">    // switch aspace from kernel to app
     unsafe { init_app_page_table(); }
-    unsafe { switch_app_aspace(); }
-<span class="boring">}</span></code></pre></pre>
+    unsafe { switch_app_aspace(); }</code></pre>
 <p>执行 <code>make run</code>，成功。</p>
 </li>
 </ol>
