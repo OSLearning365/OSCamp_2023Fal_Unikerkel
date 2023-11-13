@@ -175,18 +175,18 @@
                 <div id="content" class="content">
                     <main>
                         <h2 id="前言"><a class="header" href="#前言">前言</a></h2>
-<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第二周的练习内容。</p>
-<h3 id="练习目标"><a class="header" href="#练习目标">练习目标</a></h3>
-<p>在 ArceOS Unikernel OS 模式下，完成几个基本练习与附加练习，为支持多应用的实习任务做准备。</p>
+<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第二周的练习内容，目标是在 ArceOS Unikernel OS 模式下，完成几个基本实验与附加练习，为支持多应用的实习任务做准备。</p>
 <ol>
-<li>基本练习：以增量的方式基本给出了所有的源码。</li>
-<li>附加练习：基于基本练习，根据自己的理解，增加一些实现，以达到练习要求目标。</li>
+<li>基本实验：本指导书以增量的方式基本给出了 1 到 5 共 5 个实验的源码及过程，大家照着做一遍，以熟悉基本原理机制。</li>
+<li>附加练习：基于基本实验，根据自己的理解，增加一些实现，以达到练习要求目标。总共 6 个练习。</li>
 </ol>
-<p><strong>建立两个分支：</strong></p>
-<ul>
-<li>第一个分支命名为 week2_base，对应<strong>基本练习</strong>。按照实验步骤进行，每完成一步，commit 一次，commit msg 是 &quot;step N&quot;，N 是实验序号；</li>
-<li>第二个分支命名为 week2_exercise，对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 &quot;extercise N&quot;，N 是练习序号。</li>
-</ul>
+<p>对完成实验和练习的过程要求：</p>
+<ol>
+<li>按照下节 <em><strong>环境准备</strong></em> 第 2 点要求分别建立分支，并 commit。</li>
+<li>更新群里的”第二周实习进度汇总“表。</li>
+<li>成功的截图发到群里。</li>
+<li>仓库链接发邮件到 sun_ye@massclouds.com。<strong>注意</strong>：第一周发过邮件的同学，只要你的仓库未改，<strong>不用</strong>发邮件。我们保留了你们的仓库，可以直接去对应分支上查看各位的代码。所以请务必按照后面的要求建立分支和标记 commit 消息。</li>
+</ol>
 <h3 id="环境准备"><a class="header" href="#环境准备">环境准备</a></h3>
 <ol>
 <li>
@@ -195,17 +195,22 @@
 </code></pre>
 <p>通过 <code>git log</code> 查看 commit id 是否为 <em>51a42ea4d65a53bf6b43fc35a27a3ff1e9e284c7</em>。如果不是，回退到这个 commit，确保工作的基线与指导书一致。</p>
 <blockquote>
-<p><font size=2>进行过项目 1 第一周练习的同学，这步应该已经具备，直接从第 2 步开始。</font></p>
+<p><font size=2>注意：进行过项目 1 第一周练习的同学，这步应该已经具备，直接从第 2 步开始。</font></p>
 </blockquote>
 </li>
 <li>
 <p>建立并切换到分支 week2_base：</p>
 <pre><code class="language-sh">git checkout -b week2_base
 </code></pre>
-<p>今后这个分支将作为我们基本练习的分支。</p>
-<blockquote>
-<p><font size=2>等开始附加练习时，参照创建分支 week2_exercise。</font></p>
-</blockquote>
+<p>这个分支对应<strong>基本实验</strong>。开始实验时，每完成一个，就 commit  一次，commit msg 是 &quot;step N&quot;，N 是实验序号。</p>
+</li>
+<li>
+<p>建立并切换到分支 week2_exercise：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>git checkout -b week2_exercise
+<span class="boring">}</span></code></pre></pre>
+<p>这个分支对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 &quot;exercise N&quot;，N 是练习序号。</p>
 </li>
 <li>
 <p>执行 <code>make run ARCH=riscv64</code> 测试一下环境，我们的实习平台是 <strong>riscv64-qemu-virt</strong>。</p>
