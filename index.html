@@ -191,7 +191,7 @@
 <ol>
 <li>
 <p>Fork ArceOS 的工程，clone 到本地。工程链接如下：</p>
-<pre><code class="language-sh">git@github.com:arceos-org/arceos.git
+<pre><code class="language-bash">git@github.com:arceos-org/arceos.git
 </code></pre>
 <p>通过 <code>git log</code> 查看 commit id 是否为 <em>51a42ea4d65a53bf6b43fc35a27a3ff1e9e284c7</em>。如果不是，回退到这个 commit，确保工作的基线与指导书一致。</p>
 <blockquote>
@@ -200,21 +200,21 @@
 </li>
 <li>
 <p>建立并切换到分支 week2_base：</p>
-<pre><code class="language-sh">git checkout -b week2_base
+<pre><code class="language-bash">git checkout main
+git checkout -b week2_base
 </code></pre>
 <p>这个分支对应<strong>基本实验</strong>。开始实验时，每完成一个，就 commit  一次，commit msg 是 &quot;step N&quot;，N 是实验序号。</p>
 </li>
 <li>
 <p>建立并切换到分支 week2_exercise：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>git checkout -b week2_exercise
-<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-bash">git checkout main
+git checkout -b week2_exercise
+</code></pre>
 <p>这个分支对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 &quot;exercise N&quot;，N 是练习序号。</p>
 </li>
 <li>
 <p>执行 <code>make run ARCH=riscv64</code> 测试一下环境，我们的实习平台是 <strong>riscv64-qemu-virt</strong>。</p>
-<pre><code class="language-sh">       d8888                            .d88888b.   .d8888b.
+<pre><code class="language-bash">       d8888                            .d88888b.   .d8888b.
       d88888                           d88P&quot; &quot;Y88b d88P  Y88b
      d88P888                           888     888 Y88b.
     d88P 888 888d888  .d8888b  .d88b.  888     888  &quot;Y888b.
