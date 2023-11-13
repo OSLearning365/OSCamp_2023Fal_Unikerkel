@@ -184,8 +184,9 @@
 <h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
 <ol>
 <li>
-<p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的main.rs。</p>
-<pre><code class="language-rust ignore">fn main() {
+<p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的 main.rs （这里只给出增量代码）。</p>
+<pre><code class="language-rust ignore">#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
@@ -207,10 +208,22 @@
 
     println!(&quot;Load payload ok!&quot;);
 }</code></pre>
-<p><code>make run</code> 显示正常，代码被拷贝到目标区域。</p>
+<p><code>make run</code> 显示如下，代码被正常拷贝到目标区域。</p>
+<pre><code class="language-bash">arch = riscv64
+platform = riscv64-qemu-virt
+target = riscv64gc-unknown-none-elf
+smp = 1
+build_mode = release
+log_level = warn
+
+Load payload ...
+load code [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x22000000]
+run code [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0xffffffc080100000]
+Load payload ok!
+</code></pre>
 </li>
 <li>
-<p>然后从新的位置开始执行 App 的逻辑，在上面 main 函数的末尾追加代码执行。</p>
+<p>然后从新的位置开始执行 App 的逻辑，在上面main函数的末尾追加代码执行。</p>
 <pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
 
     // execute app
@@ -221,6 +234,10 @@
         run_start = const RUN_START,
     )}</code></pre>
 <p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
+<blockquote>
+<p><font size=2>如果提示需要 #![feature(asm_const)] 之类的支持，按照提示处理。</font></p>
+<p><font size=2>另：qemu 卡住后，退出到命令行的按键是，Ctrl+a 后按 x。</font></p>
+</blockquote>
 </li>
 <li>
 <p>要想知道是否成功，需要通过查看 qemu.log 进行判断。ArceOS 支持输出这种日志，为方便，直接改 Makefile 默认项。</p>

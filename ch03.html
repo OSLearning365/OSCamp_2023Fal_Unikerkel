@@ -176,14 +176,14 @@
                     <main>
                         <h2 id="实验3通过-abi-调用-arceos-功能"><a class="header" href="#实验3通过-abi-调用-arceos-功能">实验3：通过 ABI 调用 ArceOS 功能</a></h2>
 <h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
-<p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用调用 ABI。</p>
+<p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让内嵌应用 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用通过ABI 调用功能。</p>
 <div style="text-align:center">
    <img src=".\img\p3.svg" alt="p3" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
 <ol>
 <li>
-<p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。</p>
+<p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。在 main.rs 中增加：</p>
 <pre><code class="language-rust ignore">const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
@@ -203,7 +203,10 @@ fn abi_putchar(c: char) {
 </li>
 <li>
 <p>在 ArceOS 内嵌应用 loader 中，测试按照调用号调用 ABI 功能。我们可以分别测试一下两个功能。</p>
-<pre><code class="language-rust ignore">    register_abi(SYS_HELLO, abi_hello as usize);
+<p>下面是在 main() 函数中调用的，改造原来的那几行汇编，变成下面这样：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
 	println!(&quot;Execute app ...&quot;);
@@ -225,9 +228,10 @@ fn abi_putchar(c: char) {
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
         in(&quot;a0&quot;) arg0,
-    )}</code></pre>
-<p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。执行结果如下：</p>
-<pre><code class="language-bash">arch = riscv64
+    )}
+<span class="boring">}</span></code></pre></pre>
+<p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。如下是执行结果：</p>
+<pre><code class="language-sh">arch = riscv64
 platform = riscv64-qemu-virt
 target = riscv64gc-unknown-none-elf
 smp = 1
@@ -244,11 +248,12 @@ Execute app ...
 QEMU: Terminated
 </code></pre>
 <p>看到打印出字符 'A'，测试成功！</p>
+<p>打印后卡住了，还是用 Ctrl+a 后 x 退出。下面练习 4 就实验一下退出功能。</p>
 </li>
 </ol>
 <h3 id="练习"><a class="header" href="#练习">练习</a></h3>
 <h4 id="练习-4"><a class="header" href="#练习-4">练习 4：</a></h4>
-<p>支持 3 号调用 - SYS_TERMINATE 功能调用，作用是让 ArceOS 退出。</p>
+<p>本实验已经实现了1 号调用 - SYS_HELLO，2 号调用 - SYS_PUTCHAR，请实现 3 号调用 - SYS_TERMINATE 功能调用，作用是让 ArceOS 退出，相当于 OS 关机。</p>
 
                     </main>
 

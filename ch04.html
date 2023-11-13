@@ -198,7 +198,7 @@
 <p>loader 不再调用 abi，只是把 ABI_TABLE 的地址传给外部应用 hello_app。注意：我们传递地址用的是 a7 寄存器。</p>
 </li>
 <li>
-<p>应用 hello_app 通过 ABI 获取 ArceOS 服务的实现：</p>
+<p>应用 hello_app 通过 ABI 获取 ArceOS 服务，修改它的 main.rs：</p>
 <pre><code class="language-rust ignore">#![feature(asm_const)]
 #![no_std]
 #![no_main]
@@ -234,8 +234,12 @@ fn panic(_info: &amp;PanicInfo) -&gt; ! {
 </blockquote>
 </li>
 <li>
+<p><strong>重新执行</strong> hello_app 的编译转换步骤，见实验 1 的第 3 步。</p>
+<p>之前如果已经把步骤写入 shell 脚本，这步就比较简单。</p>
+</li>
+<li>
 <p>执行 <code>make run</code>，测试结果：</p>
-<pre><code class="language-bash">Execute app ...
+<pre><code class="language-sh">Execute app ...
 [ABI:Print] C
 QEMU: Terminated
 </code></pre>
@@ -244,14 +248,21 @@ QEMU: Terminated
 </ol>
 <h3 id="练习"><a class="header" href="#练习">练习</a></h3>
 <h4 id="练习-5"><a class="header" href="#练习-5">练习 5：</a></h4>
-<p>把三个功能调用的汇编实现封装为函数，以普通函数方式调用。</p>
-<p>其中，基于打印字符函数实现一个高级函数 <code>fn puts(s: &amp;str)</code>，可以支持输出字符串。</p>
-<p>应用的执行顺序是：</p>
+<p>按照如下要求改造应用 hello_app：</p>
 <ol>
-<li>Hello 功能；</li>
-<li>打印字符串功能；</li>
-<li>退出功能。</li>
+<li>
+<p>把三个功能调用的汇编实现封装为函数，以普通函数方式调用。例如，SYS_PUTCHAR 封装为 <code>fn putchar(c: char)</code>。</p>
+</li>
+<li>
+<p>基于打印字符函数 putchar 实现一个高级函数 <code>fn puts(s: &amp;str)</code>，可以支持输出字符串。</p>
+</li>
+<li>
+<p>应用 hello_app 的执行顺序是：Hello 功能、打印字符串功能、退出功能。</p>
+</li>
 </ol>
+<blockquote>
+<p><font size=2>别忘了应用修改后，还要执行实验 1 的第 3 步完成编译转换和覆盖旧应用。如果当时封装了 shell 脚本，这步比较方便。</font></p>
+</blockquote>
 
                     </main>
 

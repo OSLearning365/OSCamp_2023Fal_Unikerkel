@@ -176,35 +176,41 @@
                 <div id="content" class="content">
                     <main>
                         <h2 id="前言"><a class="header" href="#前言">前言</a></h2>
-<p>为更好的指导 2023 秋冬季 OS 训练营第三阶段 Unikernel 方向的项目实习，编写本指导书。</p>
-<h3 id="实习任务目标"><a class="header" href="#实习任务目标">实习任务目标</a></h3>
-<p>在 ArceOS Unikernel OS 模式下，支持多应用。</p>
-<p>正式实习时间为两周。但在正式实习开始之前，需要先完成 5 个实验与附加练习，为正式实习做准备。</p>
-<p>实验以增量的方式基本给出了所有的源码。而对应练习，需要大家根据自己的理解，增加一些实现，以达到设定目标。</p>
-<p>建立两个分支：</p>
+<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第二周的练习内容。</p>
+<h3 id="练习目标"><a class="header" href="#练习目标">练习目标</a></h3>
+<p>在 ArceOS Unikernel OS 模式下，完成几个基本练习与附加练习，为支持多应用的实习任务做准备。</p>
+<ol>
+<li>基本练习：以增量的方式基本给出了所有的源码。</li>
+<li>附加练习：基于基本练习，根据自己的理解，增加一些实现，以达到练习要求目标。</li>
+</ol>
+<p><strong>建立两个分支：</strong></p>
 <ul>
-<li>第一个分支命名为 base，按照本手册实验步骤进行，每完成一步，commit 一次，commit msg 是 &quot;step N&quot;，N 是实验序号；</li>
-<li>第二个分支命名为 exercise，根据每个附加练习的要求顺序完成，每完成一个练习，commit 一次，commit msg 是 &quot;exercise N&quot;，N 是练习序号。</li>
+<li>第一个分支命名为 week2_base，对应<strong>基本练习</strong>。按照实验步骤进行，每完成一步，commit 一次，commit msg 是 &quot;step N&quot;，N 是实验序号；</li>
+<li>第二个分支命名为 week2_exercise，对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 &quot;extercise N&quot;，N 是练习序号。</li>
 </ul>
 <h3 id="环境准备"><a class="header" href="#环境准备">环境准备</a></h3>
 <ol>
 <li>
-<p>克隆 arceos 项目到本地，并查看 main 分支的当前 commit id。</p>
-<pre><code class="language-bash">git clone git@github.com:arceos-org/arceos.git
-git log
+<p>Fork ArceOS 的工程，clone 到本地。工程链接如下：</p>
+<pre><code class="language-sh">git@github.com:arceos-org/arceos.git
 </code></pre>
-<p>通过 <code>git log</code> 查看 commit id 是否为 <em>51a42ea4d65a53bf6b43fc35a27a3ff1e9e284c7</em>。</p>
-<p>如果不是，执行 <code>git checkout 51a42ea4</code> 进行切换，确保工作的基线与指导书一致。</p>
+<p>通过 <code>git log</code> 查看 commit id 是否为 <em>51a42ea4d65a53bf6b43fc35a27a3ff1e9e284c7</em>。如果不是，回退到这个 commit，确保工作的基线与指导书一致。</p>
+<blockquote>
+<p><font size=2>进行过项目 1 第一周练习的同学，这步应该已经具备，直接从第 2 步开始。</font></p>
+</blockquote>
 </li>
 <li>
-<p>建立并切换到分支 course。</p>
-<pre><code class="language-bash">git checkout -b course
+<p>建立并切换到分支 week2_base：</p>
+<pre><code class="language-sh">git checkout -b week2_base
 </code></pre>
-<p>今后这个 course 将作为我们实习的工作分支。</p>
+<p>今后这个分支将作为我们基本练习的分支。</p>
+<blockquote>
+<p><font size=2>等开始附加练习时，参照创建分支 week2_exercise。</font></p>
+</blockquote>
 </li>
 <li>
-<p>执行 <code>make run ARCH=riscv64</code>测试一下环境，我们的实习平台是 <strong>riscv64-qemu-virt</strong>。</p>
-<pre><code class="language-bash">       d8888                            .d88888b.   .d8888b.
+<p>执行 <code>make run ARCH=riscv64</code> 测试一下环境，我们的实习平台是 <strong>riscv64-qemu-virt</strong>。</p>
+<pre><code class="language-sh">       d8888                            .d88888b.   .d8888b.
       d88888                           d88P&quot; &quot;Y88b d88P  Y88b
      d88P888                           888     888 Y88b.
     d88P 888 888d888  .d8888b  .d88b.  888     888  &quot;Y888b.
@@ -220,9 +226,7 @@ smp = 1
 build_mode = release
 log_level = warn
 
-Load payload ...
-content[[115, 0, 80, 16, 0, 0]]:
-Load payload ok!
+Hello, world!
 </code></pre>
 <p>看到这个输出表示环境正常。</p>
 </li>
@@ -236,7 +240,7 @@ Load payload ok!
 <h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
 <ol>
 <li>
-<p>编写一个 no_std 应用作为实验对象，命名为 hello_app，目录与 arceos 目录并列。它的主文件 main.rs 如下：</p>
+<p>编写一个 no_std 应用作为实验对象，命名为 hello_app，目录与 arceos 目录<strong>并列</strong>。它的主文件 main.rs 如下：</p>
 <pre><code class="language-rust ignore">#![no_std]
 #![no_main]
 
@@ -277,10 +281,13 @@ dd if=./hello_app.bin of=./apps.bin conv=notrunc
 mkdir -p ../arceos/payload
 mv ./apps.bin ../arceos/payload/apps.bin
 </code></pre>
-<p>得到 image 文件 apps.bin，上面最后两步把它转移到 arceos 目录下，以方便启动。</p>
+<p>得到image文件apps.bin，上面最后两步把它转移到arceos/payload目录下，以方便启动。</p>
+<blockquote>
+<p><font size=2>这步的一系列动作可以考虑写入一个shell脚本，便于今后执行。</font></p>
+</blockquote>
 </li>
 <li>
-<p>进入 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。</p>
+<p>转移到 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。仿照 helloworld 应用创建，它的 main.rs 如下：</p>
 <pre><code class="language-rust ignore">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
 #![cfg_attr(feature = &quot;axstd&quot;, no_main)]
 
@@ -318,7 +325,7 @@ fn main() {
     BOOT_PT_SV39[0] = (0x00000 &lt;&lt; 10) | 0xef;
 }</code></pre>
 <blockquote>
-<p><font size=2>注意：只有最后两行是我们新增的映射，这样 ArceOS 就可以访问 pflash 所在的地址空间。</font></p>
+<p><font size=2>注意：只有最后两行是我们新增的映射，这样 ArceOS 就可以访问 pflash 所在的地址空间了。</font></p>
 </blockquote>
 </li>
 <li>
@@ -340,7 +347,7 @@ fn main() {
 </code></pre>
 </li>
 <li>
-<p>执行 <code>make run</code> 测试。</p>
+<p>把 apps/loader 加到根目录 Cargo.toml 中的 [workspace] 下的 members 列表中。执行 <code>make run</code> 测试。</p>
 <pre><code class="language-bash">arch = riscv64
 platform = riscv64-qemu-virt
 target = riscv64gc-unknown-none-elf
@@ -353,8 +360,11 @@ content: [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 Load payload ok!
 </code></pre>
 <p>注意前 6 个字节，转为十六级制就是测试应用 hello_app.bin 的内容，可以用如下命令确认：</p>
-<pre><code class="language-bash">xxd -l ./hello_app.bin
-</code></pre>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>xxd -l ./hello_app.bin
+<span class="boring">}</span></code></pre></pre>
+<p>对比后可发现内容一致。应用打印的是十进制，xxd 显示的十六进展，注意进制和大小端问题。</p>
 </li>
 </ol>
 <h3 id="练习"><a class="header" href="#练习">练习</a></h3>
@@ -376,8 +386,9 @@ Load payload ok!
 <h3 id="实验步骤-1"><a class="header" href="#实验步骤-1">实验步骤</a></h3>
 <ol>
 <li>
-<p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的main.rs。</p>
-<pre><code class="language-rust ignore">fn main() {
+<p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的 main.rs （这里只给出增量代码）。</p>
+<pre><code class="language-rust ignore">#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
@@ -399,10 +410,22 @@ Load payload ok!
 
     println!(&quot;Load payload ok!&quot;);
 }</code></pre>
-<p><code>make run</code> 显示正常，代码被拷贝到目标区域。</p>
+<p><code>make run</code> 显示如下，代码被正常拷贝到目标区域。</p>
+<pre><code class="language-bash">arch = riscv64
+platform = riscv64-qemu-virt
+target = riscv64gc-unknown-none-elf
+smp = 1
+build_mode = release
+log_level = warn
+
+Load payload ...
+load code [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x22000000]
+run code [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0xffffffc080100000]
+Load payload ok!
+</code></pre>
 </li>
 <li>
-<p>然后从新的位置开始执行 App 的逻辑，在上面 main 函数的末尾追加代码执行。</p>
+<p>然后从新的位置开始执行 App 的逻辑，在上面main函数的末尾追加代码执行。</p>
 <pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
 
     // execute app
@@ -413,6 +436,10 @@ Load payload ok!
         run_start = const RUN_START,
     )}</code></pre>
 <p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
+<blockquote>
+<p><font size=2>如果提示需要 #![feature(asm_const)] 之类的支持，按照提示处理。</font></p>
+<p><font size=2>另：qemu 卡住后，退出到命令行的按键是，Ctrl+a 后按 x。</font></p>
+</blockquote>
 </li>
 <li>
 <p>要想知道是否成功，需要通过查看 qemu.log 进行判断。ArceOS 支持输出这种日志，为方便，直接改 Makefile 默认项。</p>
@@ -433,14 +460,14 @@ Priv: 1; Virt: 0
 <p>批处理方式执行两个单行代码应用，第一个应用的单行代码是 <code>noop</code>，第二个的是 <code>wfi</code>。</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="实验3通过-abi-调用-arceos-功能"><a class="header" href="#实验3通过-abi-调用-arceos-功能">实验3：通过 ABI 调用 ArceOS 功能</a></h2>
 <h3 id="实验目标-2"><a class="header" href="#实验目标-2">实验目标</a></h3>
-<p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用调用 ABI。</p>
+<p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让内嵌应用 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用通过ABI 调用功能。</p>
 <div style="text-align:center">
    <img src=".\img\p3.svg" alt="p3" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤-2"><a class="header" href="#实验步骤-2">实验步骤</a></h3>
 <ol>
 <li>
-<p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。</p>
+<p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。在 main.rs 中增加：</p>
 <pre><code class="language-rust ignore">const SYS_HELLO: usize = 1;
 const SYS_PUTCHAR: usize = 2;
 
@@ -460,7 +487,10 @@ fn abi_putchar(c: char) {
 </li>
 <li>
 <p>在 ArceOS 内嵌应用 loader 中，测试按照调用号调用 ABI 功能。我们可以分别测试一下两个功能。</p>
-<pre><code class="language-rust ignore">    register_abi(SYS_HELLO, abi_hello as usize);
+<p>下面是在 main() 函数中调用的，改造原来的那几行汇编，变成下面这样：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
 	println!(&quot;Execute app ...&quot;);
@@ -482,9 +512,10 @@ fn abi_putchar(c: char) {
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
         in(&quot;a0&quot;) arg0,
-    )}</code></pre>
-<p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。执行结果如下：</p>
-<pre><code class="language-bash">arch = riscv64
+    )}
+<span class="boring">}</span></code></pre></pre>
+<p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。如下是执行结果：</p>
+<pre><code class="language-sh">arch = riscv64
 platform = riscv64-qemu-virt
 target = riscv64gc-unknown-none-elf
 smp = 1
@@ -501,11 +532,12 @@ Execute app ...
 QEMU: Terminated
 </code></pre>
 <p>看到打印出字符 'A'，测试成功！</p>
+<p>打印后卡住了，还是用 Ctrl+a 后 x 退出。下面练习 4 就实验一下退出功能。</p>
 </li>
 </ol>
 <h3 id="练习-2"><a class="header" href="#练习-2">练习</a></h3>
 <h4 id="练习-4"><a class="header" href="#练习-4">练习 4：</a></h4>
-<p>支持 3 号调用 - SYS_TERMINATE 功能调用，作用是让 ArceOS 退出。</p>
+<p>本实验已经实现了1 号调用 - SYS_HELLO，2 号调用 - SYS_PUTCHAR，请实现 3 号调用 - SYS_TERMINATE 功能调用，作用是让 ArceOS 退出，相当于 OS 关机。</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="实验4正式在-app-中调用-abi"><a class="header" href="#实验4正式在-app-中调用-abi">实验4：正式在 App 中调用 ABI</a></h2>
 <h3 id="实验目标-3"><a class="header" href="#实验目标-3">实验目标</a></h3>
 <p>上个实验已经实现了 ABI 机制，本实验我们让外部应用正式使用 ABI。这里需要解决一个问题，外部应用必须获得 <strong>ABI 入口表的基地址</strong>，才能以调用号为偏移，找到对应的功能。因为 loader 是 ArceOS 的内嵌应用，知道这个地址，我们让它把地址传过来。</p>
@@ -530,7 +562,7 @@ QEMU: Terminated
 <p>loader 不再调用 abi，只是把 ABI_TABLE 的地址传给外部应用 hello_app。注意：我们传递地址用的是 a7 寄存器。</p>
 </li>
 <li>
-<p>应用 hello_app 通过 ABI 获取 ArceOS 服务的实现：</p>
+<p>应用 hello_app 通过 ABI 获取 ArceOS 服务，修改它的 main.rs：</p>
 <pre><code class="language-rust ignore">#![feature(asm_const)]
 #![no_std]
 #![no_main]
@@ -566,8 +598,12 @@ fn panic(_info: &amp;PanicInfo) -&gt; ! {
 </blockquote>
 </li>
 <li>
+<p><strong>重新执行</strong> hello_app 的编译转换步骤，见实验 1 的第 3 步。</p>
+<p>之前如果已经把步骤写入 shell 脚本，这步就比较简单。</p>
+</li>
+<li>
 <p>执行 <code>make run</code>，测试结果：</p>
-<pre><code class="language-bash">Execute app ...
+<pre><code class="language-sh">Execute app ...
 [ABI:Print] C
 QEMU: Terminated
 </code></pre>
@@ -576,14 +612,21 @@ QEMU: Terminated
 </ol>
 <h3 id="练习-3"><a class="header" href="#练习-3">练习</a></h3>
 <h4 id="练习-5"><a class="header" href="#练习-5">练习 5：</a></h4>
-<p>把三个功能调用的汇编实现封装为函数，以普通函数方式调用。</p>
-<p>其中，基于打印字符函数实现一个高级函数 <code>fn puts(s: &amp;str)</code>，可以支持输出字符串。</p>
-<p>应用的执行顺序是：</p>
+<p>按照如下要求改造应用 hello_app：</p>
 <ol>
-<li>Hello 功能；</li>
-<li>打印字符串功能；</li>
-<li>退出功能。</li>
+<li>
+<p>把三个功能调用的汇编实现封装为函数，以普通函数方式调用。例如，SYS_PUTCHAR 封装为 <code>fn putchar(c: char)</code>。</p>
+</li>
+<li>
+<p>基于打印字符函数 putchar 实现一个高级函数 <code>fn puts(s: &amp;str)</code>，可以支持输出字符串。</p>
+</li>
+<li>
+<p>应用 hello_app 的执行顺序是：Hello 功能、打印字符串功能、退出功能。</p>
+</li>
 </ol>
+<blockquote>
+<p><font size=2>别忘了应用修改后，还要执行实验 1 的第 3 步完成编译转换和覆盖旧应用。如果当时封装了 shell 脚本，这步比较方便。</font></p>
+</blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="实验5支持内核和应用分离的地址空间及切换"><a class="header" href="#实验5支持内核和应用分离的地址空间及切换">实验5：支持内核和应用分离的地址空间及切换</a></h2>
 <h3 id="实验目标-4"><a class="header" href="#实验目标-4">实验目标</a></h3>
 <p>目前，ArceOS Unikernel 是单地址空间。我们希望为每个外部应用建立独立的地址空间，当应用被调度时，切换到此应用的地址空间上。这样对每个应用，就可以采用固定的地址空间布局。现在从 0x4000_0000 地址开始的 1G 区域空闲，那我们就以它作为应用的地址空间。</p>
@@ -593,7 +636,7 @@ QEMU: Terminated
 <h3 id="实验步骤-4"><a class="header" href="#实验步骤-4">实验步骤</a></h3>
 <ol>
 <li>
-<p>在 loader 中，为应用建立独立的页表(仅有一级)，并实现初始化和切换函数。</p>
+<p>在应用 loader 中，为应用 hello_app 建立独立的页表（仅有一级），并实现初始化和切换函数。main.rs 最后追加如下：</p>
 <pre><code class="language-rust ignore">//
 // App aspace
 //
@@ -628,46 +671,107 @@ unsafe fn switch_app_aspace() {
          *(.data.app_page_table)
          . = ALIGN(4K);
          *(.data .data.*)</code></pre>
-<p>紧跟在系统页表位置 *(.data.boot_page_table) 的下面。</p>
-<p>此外，代码中引用了两个外部的 crate：axconfig、riscv，修改loader的Cargo.toml</p>
-<pre><code class="language-rust ignore">[dependencies]
+<p>就紧跟在系统页表位置 *(.data.boot_page_table) 的下面。<strong>注意</strong>，咱们增加的只有中间两行。</p>
+<p>此外，代码中引用了两个外部的 crate，分别是 axconfig 和 riscv，修改 loader 的 Cargo.toml：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>[dependencies]
 axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
 axconfig = { path = &quot;../../modules/axconfig&quot; }
 
 [target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;</code></pre>
+riscv = &quot;0.10&quot;
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
-<p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，在 loader 的 main 函数中修改如下：</p>
-<pre><code class="language-rust ignore">    // app running aspace
-    // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
-    // const RUN_START: usize = 0xffff_ffc0_8010_0000;
-    // In app aspace: 0x4010_0000 -&gt; 0x8010_0000
-    const RUN_START: usize = 0x4010_0000;
-
-    let mut run_code = unsafe {
-        core::slice::from_raw_parts_mut(RUN_START as *mut u8, app_size)
-    };
-    run_code.copy_from_slice(load_code);
-    println!(&quot;run code [{:?}]; address [{:?}]&quot;, run_code, run_code.as_ptr());
-
-    println!(&quot;Load payload ok!\n&quot;);</code></pre>
+<p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，去看看这将会导致什么样的状况。</p>
+<p>在 loader 的 main 函数中修改如下：</p>
+<pre><code class="language-diff">    - const RUN_START: usize = 0xffff_ffc0_8010_0000;
+    + const RUN_START: usize = 0x4010_0000;
+</code></pre>
 <blockquote>
-<p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font>。</p>
+<p><font size=2>注意：这个 0x4010_0000 所在的 1G 空间在原始的内核地址空间中是不存在的。</font></p>
 </blockquote>
 <p>执行 <code>make run</code>，系统异常 <strong>STORE_FAULT</strong>，因为没有启用应用的地址空间映射。</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Unhandled trap Exception(StorePageFault) @ 0xffffffc080202aa8:
+TrapFrame {
+    regs: GeneralRegisters {
+        ra: 0xffffffc0802005f4,
+        sp: 0xffffffc080247d30,
+        gp: 0x0,
+        tp: 0x0,
+        t0: 0x20,
+        t1: 0xffffffc080202b38,
+        t2: 0x40100000,
+        s0: 0xffffffc0802001aa,
+        s1: 0xffffffc080200488,
+        a0: 0x40100000,
+        a1: 0x22000000,
+        a2: 0x28e428904300513,
+        a3: 0x40100020,
+        a4: 0x2,
+        a5: 0xffffffc0802018be,
+        a6: 0x20,
+        a7: 0x22000000,
+        s2: 0x1,
+        s3: 0xffffffc080247db0,
+        s4: 0xffffffc080247d48,
+        s5: 0x3,
+        s6: 0xffffffc080247d58,
+        s7: 0x2,
+        s8: 0x40100000,
+        s9: 0x20,
+        s10: 0x0,
+        s11: 0x0,
+        t3: 0x10,
+        t4: 0xffffffc080203fe0,
+        t5: 0x27,
+        t6: 0x1,
+    },
+    sepc: 0xffffffc080202aa8,
+    sstatus: 0x8000000200006100,
+}
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
-<p>在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。即在上面代码之前先调用下面的两行：</p>
-<pre><code class="language-rust ignore">    // switch aspace from kernel to app
+<p>现在正式切换地址空间。在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。</p>
+<p>即在<code>const RUN_START: usize = 0x4010_0000;</code>代码行之前，先调用下面的两行：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    // switch aspace from kernel to app
     unsafe { init_app_page_table(); }
-    unsafe { switch_app_aspace(); }</code></pre>
-<p>执行 <code>make run</code>，成功。</p>
+    unsafe { switch_app_aspace(); }
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>执行 <code>make run</code></p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Load payload ...
+load code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x22000000]
+run code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x40100000]
+Load payload ok!
+Execute app ...
+[ABI:Print] C
+<span class="boring">}</span></code></pre></pre>
+<p>又能看到打印字符了，切换地址空间成功！</p>
 </li>
 </ol>
 <h3 id="练习-4"><a class="header" href="#练习-4">练习</a></h3>
 <h4 id="练习-6"><a class="header" href="#练习-6">练习 6：</a></h4>
-<p>顺序执行两个应用，它们分别有自己的地址空间。</p>
+<ol>
+<li>
+<p>仿照 hello_app 再实现一个应用，唯一功能是打印字符 'D'。</p>
+</li>
+<li>
+<p>现在有两个应用，让它们分别有自己的地址空间。</p>
+</li>
+<li>
+<p>让 loader 顺序加载、执行这两个应用。这里有个问题，第一个应用打印后，不能进行无限循环之类的阻塞，想办法让控制权回到 loader，再由 loader 执行下一个应用。</p>
+</li>
+</ol>
 
                     </main>
 

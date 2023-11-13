@@ -183,7 +183,7 @@
 <h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
 <ol>
 <li>
-<p>在 loader 中，为应用建立独立的页表(仅有一级)，并实现初始化和切换函数。</p>
+<p>在应用 loader 中，为应用 hello_app 建立独立的页表（仅有一级），并实现初始化和切换函数。main.rs 最后追加如下：</p>
 <pre><code class="language-rust ignore">//
 // App aspace
 //
@@ -218,46 +218,107 @@ unsafe fn switch_app_aspace() {
          *(.data.app_page_table)
          . = ALIGN(4K);
          *(.data .data.*)</code></pre>
-<p>紧跟在系统页表位置 *(.data.boot_page_table) 的下面。</p>
-<p>此外，代码中引用了两个外部的 crate：axconfig、riscv，修改loader的Cargo.toml</p>
-<pre><code class="language-rust ignore">[dependencies]
+<p>就紧跟在系统页表位置 *(.data.boot_page_table) 的下面。<strong>注意</strong>，咱们增加的只有中间两行。</p>
+<p>此外，代码中引用了两个外部的 crate，分别是 axconfig 和 riscv，修改 loader 的 Cargo.toml：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>[dependencies]
 axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
 axconfig = { path = &quot;../../modules/axconfig&quot; }
 
 [target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;</code></pre>
+riscv = &quot;0.10&quot;
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
-<p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，在 loader 的 main 函数中修改如下：</p>
-<pre><code class="language-rust ignore">    // app running aspace
-    // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
-    // const RUN_START: usize = 0xffff_ffc0_8010_0000;
-    // In app aspace: 0x4010_0000 -&gt; 0x8010_0000
-    const RUN_START: usize = 0x4010_0000;
-
-    let mut run_code = unsafe {
-        core::slice::from_raw_parts_mut(RUN_START as *mut u8, app_size)
-    };
-    run_code.copy_from_slice(load_code);
-    println!(&quot;run code [{:?}]; address [{:?}]&quot;, run_code, run_code.as_ptr());
-
-    println!(&quot;Load payload ok!\n&quot;);</code></pre>
+<p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，去看看这将会导致什么样的状况。</p>
+<p>在 loader 的 main 函数中修改如下：</p>
+<pre><code class="language-diff">    - const RUN_START: usize = 0xffff_ffc0_8010_0000;
+    + const RUN_START: usize = 0x4010_0000;
+</code></pre>
 <blockquote>
-<p><font size=2>注意：这个 0x4010_0000 开始的 1G 空间在原始的内核地址空间中是不存在的</font>。</p>
+<p><font size=2>注意：这个 0x4010_0000 所在的 1G 空间在原始的内核地址空间中是不存在的。</font></p>
 </blockquote>
 <p>执行 <code>make run</code>，系统异常 <strong>STORE_FAULT</strong>，因为没有启用应用的地址空间映射。</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Unhandled trap Exception(StorePageFault) @ 0xffffffc080202aa8:
+TrapFrame {
+    regs: GeneralRegisters {
+        ra: 0xffffffc0802005f4,
+        sp: 0xffffffc080247d30,
+        gp: 0x0,
+        tp: 0x0,
+        t0: 0x20,
+        t1: 0xffffffc080202b38,
+        t2: 0x40100000,
+        s0: 0xffffffc0802001aa,
+        s1: 0xffffffc080200488,
+        a0: 0x40100000,
+        a1: 0x22000000,
+        a2: 0x28e428904300513,
+        a3: 0x40100020,
+        a4: 0x2,
+        a5: 0xffffffc0802018be,
+        a6: 0x20,
+        a7: 0x22000000,
+        s2: 0x1,
+        s3: 0xffffffc080247db0,
+        s4: 0xffffffc080247d48,
+        s5: 0x3,
+        s6: 0xffffffc080247d58,
+        s7: 0x2,
+        s8: 0x40100000,
+        s9: 0x20,
+        s10: 0x0,
+        s11: 0x0,
+        t3: 0x10,
+        t4: 0xffffffc080203fe0,
+        t5: 0x27,
+        t6: 0x1,
+    },
+    sepc: 0xffffffc080202aa8,
+    sstatus: 0x8000000200006100,
+}
+<span class="boring">}</span></code></pre></pre>
 </li>
 <li>
-<p>在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。即在上面代码之前先调用下面的两行：</p>
-<pre><code class="language-rust ignore">    // switch aspace from kernel to app
+<p>现在正式切换地址空间。在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。</p>
+<p>即在<code>const RUN_START: usize = 0x4010_0000;</code>代码行之前，先调用下面的两行：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    // switch aspace from kernel to app
     unsafe { init_app_page_table(); }
-    unsafe { switch_app_aspace(); }</code></pre>
-<p>执行 <code>make run</code>，成功。</p>
+    unsafe { switch_app_aspace(); }
+<span class="boring">}</span></code></pre></pre>
+</li>
+<li>
+<p>执行 <code>make run</code></p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>Load payload ...
+load code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x22000000]
+run code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x40100000]
+Load payload ok!
+Execute app ...
+[ABI:Print] C
+<span class="boring">}</span></code></pre></pre>
+<p>又能看到打印字符了，切换地址空间成功！</p>
 </li>
 </ol>
 <h3 id="练习"><a class="header" href="#练习">练习</a></h3>
 <h4 id="练习-6"><a class="header" href="#练习-6">练习 6：</a></h4>
-<p>顺序执行两个应用，它们分别有自己的地址空间。</p>
+<ol>
+<li>
+<p>仿照 hello_app 再实现一个应用，唯一功能是打印字符 'D'。</p>
+</li>
+<li>
+<p>现在有两个应用，让它们分别有自己的地址空间。</p>
+</li>
+<li>
+<p>让 loader 顺序加载、执行这两个应用。这里有个问题，第一个应用打印后，不能进行无限循环之类的阻塞，想办法让控制权回到 loader，再由 loader 执行下一个应用。</p>
+</li>
+</ol>
 
                     </main>
 
