@@ -247,12 +247,19 @@ fn main() {
     println!(&quot;Load payload ...&quot;);
 
     let code = unsafe { core::slice::from_raw_parts(apps_start, apps_size) };
-    println!(&quot;content: {:?}: &quot;, code);
+    println!(&quot;content: {:#x}&quot;, bytes_to_usize(&amp;code[..8]));
 
     println!(&quot;Load payload ok!&quot;);
+}
+
+#[inline]
+fn bytes_to_usize(bytes: &amp;[u8]) -&gt; usize {
+    usize::from_be_bytes(bytes.try_into().unwrap())
 }</code></pre>
 <blockquote>
-<p><font size=2>注意：qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
+<p><font size=2>注意：</font></p>
+<p><font size=2>1、qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
+<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }</font></p>
 </blockquote>
 </li>
 <li>
@@ -288,6 +295,9 @@ fn main() {
 <p>修改 scripts/make/qemu.mk，在 qemu 启动参数中加上一项：</p>
 <pre><code class="language-makefile">-drive if=pflash,file=$(CURDIR)/payload/apps.bin,format=raw,unit=1
 </code></pre>
+<blockquote>
+<p><font size=2>注意：在qemu.mk文件中修改qemu 启动参数的具体位置不是唯一的。</font></p>
+</blockquote>
 </li>
 <li>
 <p>把 apps/loader 加到根目录 Cargo.toml 中的 [workspace] 下的 members 列表中。执行 <code>make run</code> 测试。</p>
@@ -299,15 +309,14 @@ build_mode = release
 log_level = warn
 
 Load payload ...
-content: [115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]:
+content: 0x7300501000000000
 Load payload ok!
 </code></pre>
-<p>注意前 6 个字节，转为十六级制就是测试应用 hello_app.bin 的内容，可以用如下命令确认：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>xxd -l ./hello_app.bin
-<span class="boring">}</span></code></pre></pre>
-<p>对比后可发现内容一致。应用打印的是十进制，xxd 显示的十六进展，注意进制和大小端问题。</p>
+<p>注意打印的 content 就是测试应用 hello_app.bin 的内容，可以用如下命令确认：</p>
+<pre><code class="language-bash">xxd -ps ./hello_app.bin
+730050100000
+</code></pre>
+<p>对比后可发现内容一致，注意后续 0000 是 dd 命令产生的效果。</p>
 </li>
 </ol>
 <h3 id="练习"><a class="header" href="#练习">练习</a></h3>
