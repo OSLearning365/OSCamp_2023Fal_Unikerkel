@@ -471,7 +471,7 @@ Priv: 1; Virt: 0
 </ol>
 <h3 id="练习-1"><a class="header" href="#练习-1">练习</a></h3>
 <h4 id="练习-3"><a class="header" href="#练习-3">练习 3：</a></h4>
-<p>批处理方式执行两个单行代码应用，第一个应用的单行代码是 <code>noop</code>，第二个的是 <code>wfi</code>。</p>
+<p>批处理方式执行两个单行代码应用，第一个应用的单行代码是 <code>nop</code>，第二个的是 <code>wfi</code>。</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="实验3通过-abi-调用-arceos-功能"><a class="header" href="#实验3通过-abi-调用-arceos-功能">实验3：通过 ABI 调用 ArceOS 功能</a></h2>
 <h3 id="实验目标-2"><a class="header" href="#实验目标-2">实验目标</a></h3>
 <p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让内嵌应用 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用通过ABI 调用功能。</p>
