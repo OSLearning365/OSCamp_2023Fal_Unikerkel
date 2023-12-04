@@ -68,3 +68,17 @@
    ```
 
    看到这个输出表示环境正常。
+
+
+
+
+
+
+
+<script src="https://utteranc.es/client.js"
+        repo="OSLearning365/blog-issues"
+        issue-term="pathname"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
