@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - unikernel practical tutorial</title>
-        <base href="/">
+        <title>实验3：通过ABI调用ArceOS功能 - unikernel practical tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -89,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html" class="active"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -177,14 +176,98 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h2 id="实验3通过-abi-调用-arceos-功能"><a class="header" href="#实验3通过-abi-调用-arceos-功能">实验3：通过 ABI 调用 ArceOS 功能</a></h2>
+<h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
+<p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让内嵌应用 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用通过ABI 调用功能。</p>
+<div style="text-align:center">
+   <img src=".\img\2-3.svg" alt="2-3" style="zoom:100%"/>
+</div>
+<h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
+<ol>
+<li>
+<p>在 loader 中引入 abi_table，注册两个调用过程。一个是无参数的 abi_hello，另一个是单参数的 abi_putchar。在 main.rs 中增加：</p>
+<pre><code class="language-rust ignore">const SYS_HELLO: usize = 1;
+const SYS_PUTCHAR: usize = 2;
+
+static mut ABI_TABLE: [usize; 16] = [0; 16];
+
+fn register_abi(num: usize, handle: usize) {
+    unsafe { ABI_TABLE[num] = handle; }
+}
+
+fn abi_hello() {
+    println!(&quot;[ABI:Hello] Hello, Apps!&quot;);
+}
+
+fn abi_putchar(c: char) {
+    println!(&quot;[ABI:Print] {c}&quot;);
+}</code></pre>
+</li>
+<li>
+<p>在 ArceOS 内嵌应用 loader 中，测试按照调用号调用 ABI 功能。我们可以分别测试一下两个功能。</p>
+<p>下面是在 main() 函数中调用的，改造原来的那几行汇编，变成下面这样：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>    register_abi(SYS_HELLO, abi_hello as usize);
+    register_abi(SYS_PUTCHAR, abi_putchar as usize);
+
+	println!(&quot;Execute app ...&quot;);
+    let arg0: u8 = b'A';
+
+    // execute app
+    unsafe { core::arch::asm!(&quot;
+        li      t0, {abi_num}
+        slli    t0, t0, 3
+        la      t1, {abi_table}
+        add     t1, t1, t0
+        ld      t1, (t1)
+        jalr    t1
+        li      t2, {run_start}
+        jalr    t2
+        j       .&quot;,
+        run_start = const RUN_START,
+        abi_table = sym ABI_TABLE,
+        //abi_num = const SYS_HELLO,
+        abi_num = const SYS_PUTCHAR,
+        in(&quot;a0&quot;) arg0,
+    )}
+<span class="boring">}</span></code></pre></pre>
+<p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。如下是执行结果：</p>
+<pre><code class="language-sh">arch = riscv64
+platform = riscv64-qemu-virt
+target = riscv64gc-unknown-none-elf
+smp = 1
+build_mode = release
+log_level = warn
+
+Load payload ...
+load code [[115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]; address [0x22000000]
+run code [[115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]; address [0xffffffc080100000]
+Load payload ok!
+
+Execute app ...
+[ABI:Print] A
+QEMU: Terminated
+</code></pre>
+<p>看到打印出字符 'A'，测试成功！</p>
+<p>打印后卡住了，还是用 Ctrl+a 后 x 退出。下面练习 4 就实验一下退出功能。</p>
+</li>
+</ol>
+<h3 id="练习"><a class="header" href="#练习">练习</a></h3>
+<h4 id="练习-4"><a class="header" href="#练习-4">练习 4：</a></h4>
+<p>本实验已经实现了1 号调用 - SYS_HELLO，2 号调用 - SYS_PUTCHAR，请实现 3 号调用 - SYS_TERMINATE 功能调用，作用是让 ArceOS 退出，相当于 OS 关机。</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch2-2.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
 
+                            <a rel="next prefetch" href="ch2-4.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -192,7 +275,13 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch2-2.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
 
+                    <a rel="next prefetch" href="ch2-4.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

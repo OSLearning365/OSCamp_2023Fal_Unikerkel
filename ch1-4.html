@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>实验5：支持内核和应用分离的地址空间及切换 - unikernel practical tutorial</title>
+        <title>练习4：解析dtb并打印 - unikernel practical tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -88,9 +88,11 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="ch00.html"><strong aria-hidden="true">1.</strong> 前言</a></li><li class="chapter-item expanded "><a href="ch01.html"><strong aria-hidden="true">2.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch02.html"><strong aria-hidden="true">3.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch03.html"><strong aria-hidden="true">4.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch04.html"><strong aria-hidden="true">5.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch05.html" class="active"><strong aria-hidden="true">6.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html" class="active"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -174,160 +176,85 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="实验5支持内核和应用分离的地址空间及切换"><a class="header" href="#实验5支持内核和应用分离的地址空间及切换">实验5：支持内核和应用分离的地址空间及切换</a></h2>
-<h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
-<p>目前，ArceOS Unikernel 是单地址空间。我们希望为每个外部应用建立独立的地址空间，当应用被调度时，切换到此应用的地址空间上。这样对每个应用，就可以采用固定的地址空间布局。现在从 0x4000_0000 地址开始的 1G 区域空闲，那我们就以它作为应用的地址空间。</p>
+                        <h2 id="练习4解析dtb并打印"><a class="header" href="#练习4解析dtb并打印">练习4：解析dtb并打印</a></h2>
+<p><strong>目标：</strong></p>
+<p>解析 dtb（FDT 的二进制格式），打印物理内存范围和所有的 virtio_mmio 范围。以 apps/memtest 为测试应用。</p>
+<p>当 ArceOS 启动时，上一级 SBI 向我们传递了 dtb 的指针，一直会被传递到 axruntime，我们就在 axruntime 中执行解析并打印。</p>
+<p>首先，在 /modules/axruntime/src/lib.rs 的r ust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>--- a/modules/axruntime/src/lib.rs
++++ b/modules/axruntime/src/lib.rs
+@@ -140,6 +140,20 @@ pub extern &quot;C&quot; fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
+     #[cfg(feature = &quot;alloc&quot;)]
+     init_allocator();
+
++    // Parse fdt for early memory info
++    let dtb_info = match parse_dtb(dtb.into()) {
++        Ok(info) =&gt; info,
++        Err(err) =&gt; panic!(&quot;Bad dtb {:?}&quot;, err),
++    };
++
++    info!(&quot;DTB info: ==================================&quot;);
++    info!(&quot;Memory: {:#x}, size: {:#x}&quot;, dtb_info.memory_addr, dtb_info.memory_size);
++    info!(&quot;Virtio_mmio[{}]:&quot;, dtb_info.mmio_regions.len());
++    for r in dtb_info.mmio_regions {
++        info!(&quot;\t{:#x}, size: {:#x}&quot;, r.0, r.1);
++    }
++    info!(&quot;============================================&quot;);
++
+     #[cfg(feature = &quot;paging&quot;)]
+     {
+         info!(&quot;Initialize kernel page table...&quot;);
+@@ -297,3 +311,74 @@ fn init_tls() {
+     unsafe { axhal::arch::write_thread_pointer(main_tls.tls_ptr() as usize) };
+     core::mem::forget(main_tls);
+ }
+<span class="boring">}</span></code></pre></pre>
+<p>关于 parse_dtb 和它的返回值类型，类似如下定义，你对它们的具体定义有所可以不同：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>extern crate alloc;
+
+use core::str;
+use alloc::string::String;
+use alloc::vec::Vec;
+use axdtb::util::SliceRead;
+
+// 参考类型定义
+struct DtbInfo {
+    memory_addr: usize,
+    memory_size: usize,
+    mmio_regions: Vec&lt;(usize, usize)&gt;,
+}
+
+// 参考函数原型
+fn parse_dtb(dtb_pa: usize) -&gt; Result&lt;DtbInfo&gt; {
+    // 这里就是对axdtb组件的调用，传入dtb指针，解析后输出结果。这个函数和axdtb留给大家实现
+}
+<span class="boring">}</span></code></pre></pre>
+<p>然后就是本实验的中心任务：modules 目录中增加一个 axdtb 的组件，它负责解析 dtb，获取目标信息。</p>
+<p><strong>提示</strong>：</p>
+<p>解析 dtb（FDT 的二进制格式）有点繁琐，但是网络上存在很多现成的 crate 实现，例如 crate.io 中。</p>
+<p>但是注意：有可能这些 crate 不直接符合我们的需要，需要改造。主要是很多实现都是以文件路径为输入，加载文件到内存后，再解析。我们只需要进行解析的那部分。</p>
+<p><strong>预期输出</strong>：</p>
+<p>执行 <code>make ARCH=riscv64 A=apps/memtest LOG=info run</code></p>
 <div style="text-align:center">
-   <img src=".\img\p5.svg" alt="p5" style="zoom:100%"/>
+   <img src=".\img\1-3.png" alt="1-3" style="zoom:80%"/>
 </div>
-<h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
-<ol>
-<li>
-<p>在应用 loader 中，为应用 hello_app 建立独立的页表（仅有一级），并实现初始化和切换函数。main.rs 最后追加如下：</p>
-<pre><code class="language-rust ignore">//
-// App aspace
-//
-
-#[link_section = &quot;.data.app_page_table&quot;]
-static mut APP_PT_SV39: [u64; 512] = [0; 512];
-
-unsafe fn init_app_page_table() {
-    // 0x8000_0000..0xc000_0000, VRWX_GAD, 1G block
-    APP_PT_SV39[2] = (0x80000 &lt;&lt; 10) | 0xef;
-    // 0xffff_ffc0_8000_0000..0xffff_ffc0_c000_0000, VRWX_GAD, 1G block
-    APP_PT_SV39[0x102] = (0x80000 &lt;&lt; 10) | 0xef;
-
-    // 0x0000_0000..0x4000_0000, VRWX_GAD, 1G block
-    APP_PT_SV39[0] = (0x00000 &lt;&lt; 10) | 0xef;
-
-    // For App aspace!
-    // 0x4000_0000..0x8000_0000, VRWX_GAD, 1G block
-    APP_PT_SV39[1] = (0x80000 &lt;&lt; 10) | 0xef;
-}
-
-unsafe fn switch_app_aspace() {
-    use riscv::register::satp;
-    let page_table_root = APP_PT_SV39.as_ptr() as usize - axconfig::PHYS_VIRT_OFFSET;
-    satp::set(satp::Mode::Sv39, 0, page_table_root &gt;&gt; 12);
-    riscv::asm::sfence_vma_all();
-}</code></pre>
-<p>APP_PT_SV39 的链接位置 &quot;.data.app_page_table&quot;，定义在 modules/axhal/linker.lds.S 中：</p>
-<pre><code class="language-rust ignore">         _sdata = .;
-         *(.data.boot_page_table)
-         . = ALIGN(4K);
-         *(.data.app_page_table)
-         . = ALIGN(4K);
-         *(.data .data.*)</code></pre>
-<p>就紧跟在系统页表位置 *(.data.boot_page_table) 的下面。<strong>注意</strong>，咱们增加的只有中间两行。</p>
-<p>此外，代码中引用了两个外部的 crate，分别是 axconfig 和 riscv，修改 loader 的 Cargo.toml：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>[dependencies]
-axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
-axconfig = { path = &quot;../../modules/axconfig&quot; }
-
-[target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;
-<span class="boring">}</span></code></pre></pre>
-</li>
-<li>
-<p>虽然已经建立了应用的页表，但我们先不切换，直接去访问应用的地址空间 0x4010_0000，去看看这将会导致什么样的状况。</p>
-<p>在 loader 的 main 函数中修改如下：</p>
-<pre><code class="language-diff">    - const RUN_START: usize = 0xffff_ffc0_8010_0000;
-    + const RUN_START: usize = 0x4010_0000;
-</code></pre>
-<blockquote>
-<p><font size=2>注意：这个 0x4010_0000 所在的 1G 空间在原始的内核地址空间中是不存在的。</font></p>
-</blockquote>
-<p>执行 <code>make run</code>，系统异常 <strong>STORE_FAULT</strong>，因为没有启用应用的地址空间映射。</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>Unhandled trap Exception(StorePageFault) @ 0xffffffc080202aa8:
-TrapFrame {
-    regs: GeneralRegisters {
-        ra: 0xffffffc0802005f4,
-        sp: 0xffffffc080247d30,
-        gp: 0x0,
-        tp: 0x0,
-        t0: 0x20,
-        t1: 0xffffffc080202b38,
-        t2: 0x40100000,
-        s0: 0xffffffc0802001aa,
-        s1: 0xffffffc080200488,
-        a0: 0x40100000,
-        a1: 0x22000000,
-        a2: 0x28e428904300513,
-        a3: 0x40100020,
-        a4: 0x2,
-        a5: 0xffffffc0802018be,
-        a6: 0x20,
-        a7: 0x22000000,
-        s2: 0x1,
-        s3: 0xffffffc080247db0,
-        s4: 0xffffffc080247d48,
-        s5: 0x3,
-        s6: 0xffffffc080247d58,
-        s7: 0x2,
-        s8: 0x40100000,
-        s9: 0x20,
-        s10: 0x0,
-        s11: 0x0,
-        t3: 0x10,
-        t4: 0xffffffc080203fe0,
-        t5: 0x27,
-        t6: 0x1,
-    },
-    sepc: 0xffffffc080202aa8,
-    sstatus: 0x8000000200006100,
-}
-<span class="boring">}</span></code></pre></pre>
-</li>
-<li>
-<p>现在正式切换地址空间。在拷贝 Image 到 0x4010_0000 的地址之前，切换到应用的地址空间。</p>
-<p>即在<code>const RUN_START: usize = 0x4010_0000;</code>代码行之前，先调用下面的两行：</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>    // switch aspace from kernel to app
-    unsafe { init_app_page_table(); }
-    unsafe { switch_app_aspace(); }
-<span class="boring">}</span></code></pre></pre>
-</li>
-<li>
-<p>执行 <code>make run</code></p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>Load payload ...
-load code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x22000000]
-run code [19, 5, 48, 4, 137, 66, 142, 2, 51, 131, 88, 0, 3, 51, 3, 0, 2, 147, 115, 0, 80, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; address [0x40100000]
-Load payload ok!
-Execute app ...
-[ABI:Print] C
-<span class="boring">}</span></code></pre></pre>
-<p>又能看到打印字符了，切换地址空间成功！</p>
-</li>
-</ol>
-<h3 id="练习"><a class="header" href="#练习">练习</a></h3>
-<h4 id="练习-6"><a class="header" href="#练习-6">练习 6：</a></h4>
-<ol>
-<li>
-<p>仿照 hello_app 再实现一个应用，唯一功能是打印字符 'D'。</p>
-</li>
-<li>
-<p>现在有两个应用，让它们分别有自己的地址空间。</p>
-</li>
-<li>
-<p>让 loader 顺序加载、执行这两个应用。这里有个问题，第一个应用打印后，不能进行无限循环之类的阻塞，想办法让控制权回到 loader，再由 loader 执行下一个应用。</p>
-</li>
-</ol>
+<p>可以看到输出了解析 dtb 后的物理内存信息，和 virtio_mmio 区域信息。</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="ch04.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="ch1-3.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="ch1-5.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -335,10 +262,13 @@ Execute app ...
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="ch04.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="ch1-3.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="ch1-5.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

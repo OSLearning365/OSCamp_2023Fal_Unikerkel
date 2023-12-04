@@ -89,9 +89,11 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="ch00.html"><strong aria-hidden="true">1.</strong> 前言</a></li><li class="chapter-item expanded "><a href="ch01.html"><strong aria-hidden="true">2.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch02.html"><strong aria-hidden="true">3.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch03.html"><strong aria-hidden="true">4.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch04.html"><strong aria-hidden="true">5.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch05.html"><strong aria-hidden="true">6.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
 
         <!-- Track and set sidebar scroll position -->
@@ -175,7 +177,454 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="前言"><a class="header" href="#前言">前言</a></h2>
+                        <h2 id="第一周"><a class="header" href="#第一周">第一周</a></h2>
+<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第一周的练习内容，包含 5 个基本练习。</p>
+<p>对完练习的过程要求：</p>
+<ol>
+<li>按照下节 <em><strong>环境准备</strong></em> 要求建立分支。</li>
+<li>成功的截图发到群里。</li>
+<li>仓库链接发邮件到 sun_ye@massclouds.com。</li>
+</ol>
+<h3 id="环境准备"><a class="header" href="#环境准备">环境准备</a></h3>
+<ol>
+<li>
+<p>Fork ArceOS的工程，clone到本地。工程链接如下：</p>
+<pre><code class="language-sh">git@github.com:arceos-org/arceos.git
+</code></pre>
+</li>
+<li>
+<p>在main分支下，创建并切换到新的分支week1，执行：</p>
+<pre><code class="language-shell">git checkout -b week1
+</code></pre>
+<p>第一周的练习都在该分支下进行。</p>
+</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="练习1支持彩色打印-println"><a class="header" href="#练习1支持彩色打印-println">练习1：支持彩色打印 println!</a></h2>
+<p><strong>目标：</strong></p>
+<p>支持彩色打印 println!。以 apps/helloworld 为测试应用。</p>
+<p><strong>要求</strong>：</p>
+<p>不能在 helloworld 程序本身改，要在下面的库或更深层次的组件修改。</p>
+<p><strong>预期输出</strong>：</p>
+<p>执行<code>make run ARCH=riscv64</code>，输出的效果：</p>
+<div style="text-align:center">
+   <img src=".\img\1-1.png" alt="1-1" style="zoom:80%"/>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="练习2支持hashmap数据类型"><a class="header" href="#练习2支持hashmap数据类型">练习2：支持HashMap数据类型</a></h2>
+<p><strong>目标：</strong></p>
+<p>支持 HashMap 数据类型。以 apps/memtest 为测试应用。</p>
+<p>首先修改 apps/memtest/src/main.rs，把 BTreeMap 替换为 HashMap，如下：</p>
+<pre><code class="language-diff"> use rand::{rngs::SmallRng, RngCore, SeedableRng};
+-use std::collections::BTreeMap;
++use std::collections::HashMap;
+ use std::vec::Vec;
+
+ fn test_vec(rng: &amp;mut impl RngCore) {
+@@ -22,9 +22,9 @@ fn test_vec(rng: &amp;mut impl RngCore) {
+     println!(&quot;test_vec() OK!&quot;);
+ }
+
+-fn test_btree_map(rng: &amp;mut impl RngCore) {
++fn test_hashmap_map(rng: &amp;mut impl RngCore) {
+     const N: usize = 50_000;
+-    let mut m = BTreeMap::new();
++    let mut m = HashMap::new();
+     for _ in 0..N {
+         let value = rng.next_u32();
+         let key = format!(&quot;key_{value}&quot;);
+@@ -35,7 +35,7 @@ fn test_btree_map(rng: &amp;mut impl RngCore) {
+             assert_eq!(k.parse::&lt;u32&gt;().unwrap(), *v);
+         }
+     }
+-    println!(&quot;test_btree_map() OK!&quot;);
++    println!(&quot;test_hashmap_map() OK!&quot;);
+ }
+
+ #[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+@@ -44,7 +44,7 @@ fn main() {
+
+     let mut rng = SmallRng::seed_from_u64(0xdead_beef);
+     test_vec(&amp;mut rng);
+-    test_btree_map(&amp;mut rng);
++    test_hashmap_map(&amp;mut rng);
+
+     println!(&quot;Memory tests run OK!&quot;);
+ }
+</code></pre>
+<p>然后，尝试编译运行，<code>make A=apps/memtest ARCH=riscv64 run</code>，此时会报错，因为我们目前不支持HashMap类型。</p>
+<p><strong>要求</strong>：</p>
+<p>在 ulib/axstd 中支持 HashMap 类型</p>
+<p><strong>预期输出</strong>：</p>
+<p>执行 <code>make A=apps/memtest ARCH=riscv64 run</code></p>
+<pre><code class="language-sh">arch = riscv64
+platform = riscv64-qemu-virt
+target = riscv64gc-unknown-none-elf
+smp = 1
+build_mode = release
+log_level = warn
+
+Running memory tests...
+test_vec() OK!
+test_hashmap_map() OK!
+Memory tests run OK!
+</code></pre>
+<p><strong>提示</strong> ：</p>
+<ol>
+<li>
+<p>参考官方 rust 标准库中的 HashMap 实现，把涉及的代码拷过来，做一下修改。只需要满足 memtest 的测试需要即可。</p>
+</li>
+<li>
+<p>注意：官方 std 与 ArceOS 的 axstd 的区别。官方 rust 标准库主要是基于 Linux/Windows 这些内核，为应用提供的用户库。官方 std 的支持后端是 libc+syscall；而 ArceOS 是单特权级，没有 syscall 一说，axstd 直接通过一系列 function-call 调用底层的功能。</p>
+</li>
+<li>
+<p>HashMap 之所以没有像其他 collections 类型一样放到 alloc 库中实现，主要是因为它需要随机数的支持，而随机数的产生机制是平台相关的。大家做实验可以简单点，用一个软实现的随机数函数来产生。比如：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use spinlock::SpinNoIrq;
+use crate::time;
+
+static PARK_MILLER_LEHMER_SEED: SpinNoIrq&lt;u32&gt; = SpinNoIrq::new(0);
+const RAND_MAX: u64 = 2_147_483_647;
+
+pub fn random() -&gt; u128 {
+    let mut seed = PARK_MILLER_LEHMER_SEED.lock();
+    if *seed == 0 {
+        *seed = time::current_ticks() as u32;
+    }
+
+    let mut ret: u128 = 0;
+    for _ in 0..4 {
+        *seed = ((u64::from(*seed) * 48271) % RAND_MAX) as u32;
+        ret = (ret &lt;&lt; 32) | (*seed as u128);
+    }
+    ret
+}
+<span class="boring">}</span></code></pre></pre>
+</li>
+</ol>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="练习3为内存分配器实现新的内存算法"><a class="header" href="#练习3为内存分配器实现新的内存算法">练习3：为内存分配器实现新的内存算法</a></h2>
+<p><strong>目标：</strong></p>
+<p>为内存分配器实现新的内存算法 early，禁用其它算法。early 分配算法以 apps/memtest 为测试应用。</p>
+<p>**首先，**为 memtest 增加 feature = &quot;paging&quot;，便于查看对 Page 的分配情况。修改 apps/memtest/Cargo.toml，对比变动如下</p>
+<pre><code class="language-toml">-axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;], optional = true }
++axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;paging&quot;], optional = true }
+</code></pre>
+<p>**然后，**修改 modules/axruntime/src/lib.rs 增加下面几行，对比变动：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>+    {
++        let ga = axalloc::global_allocator();
++        info!(&quot;Used pages {} / Used bytes {}&quot;, ga.used_pages(), ga.used_bytes());
++    }
+     unsafe { main() };
+<span class="boring">}</span></code></pre></pre>
+<p>这几行的目的，在调用应用的 main() 之前，输出对页和字节的用量。</p>
+<p>**最后，**用下面的内容替换 modules/axalloc/src/lib.rs，禁用其它算法，只使用我们将要增加的 early 算法。</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span>#![no_std]
+
+<span class="boring">fn main() {
+</span>#[macro_use]
+extern crate log;
+extern crate alloc;
+
+mod page;
+
+use allocator::{AllocResult, EarlyAllocator};
+use core::alloc::{GlobalAlloc, Layout};
+use core::ptr::NonNull;
+use spinlock::SpinNoIrq;
+
+const PAGE_SIZE: usize = 0x1000;
+
+pub use page::GlobalPage;
+
+/// The global allocator used by ArceOS.
+pub struct GlobalAllocator {
+    inner: SpinNoIrq&lt;EarlyAllocator&lt;PAGE_SIZE&gt;&gt;,
+}
+
+impl GlobalAllocator {
+    /// Creates an empty [`GlobalAllocator`].
+    pub const fn new() -&gt; Self {
+        Self {
+            inner: SpinNoIrq::new(EarlyAllocator::new()),
+        }
+    }
+
+    /// Returns the name of the allocator.
+    pub const fn name(&amp;self) -&gt; &amp;'static str {
+        &quot;early&quot;
+    }
+
+    /// Initializes the allocator with the given region.
+    pub fn init(&amp;self, start_vaddr: usize, size: usize) {
+        self.inner.lock().init(start_vaddr, size);
+    }
+
+    /// Add the given region to the allocator.
+    pub fn add_memory(&amp;self, _start_vaddr: usize, _size: usize) -&gt; AllocResult {
+        unimplemented!()
+    }
+
+    /// Allocate arbitrary number of bytes. Returns the left bound of the
+    /// allocated region.
+    pub fn alloc(&amp;self, layout: Layout) -&gt; AllocResult&lt;NonNull&lt;u8&gt;&gt; {
+        self.inner.lock().alloc(layout)
+    }
+
+    /// Gives back the allocated region to the byte allocator.
+    pub fn dealloc(&amp;self, pos: NonNull&lt;u8&gt;, layout: Layout) {
+        self.inner.lock().dealloc(pos, layout)
+    }
+
+    /// Allocates contiguous pages.
+    pub fn alloc_pages(&amp;self, num_pages: usize, align_pow2: usize) -&gt; AllocResult&lt;usize&gt; {
+        self.inner.lock().alloc_pages(num_pages, align_pow2)
+    }
+
+    /// Gives back the allocated pages starts from `pos` to the page allocator.
+    /// [`alloc_pages`]: GlobalAllocator::alloc_pages
+    pub fn dealloc_pages(&amp;self, pos: usize, num_pages: usize) {
+        self.inner.lock().dealloc_pages(pos, num_pages)
+    }
+
+    /// Returns the number of allocated bytes in the byte allocator.
+    pub fn used_bytes(&amp;self) -&gt; usize {
+        self.inner.lock().used_bytes()
+    }
+
+    /// Returns the number of available bytes in the byte allocator.
+    pub fn available_bytes(&amp;self) -&gt; usize {
+        self.inner.lock().available_bytes()
+    }
+
+    /// Returns the number of allocated pages in the page allocator.
+    pub fn used_pages(&amp;self) -&gt; usize {
+        self.inner.lock().used_pages()
+    }
+
+    /// Returns the number of available pages in the page allocator.
+    pub fn available_pages(&amp;self) -&gt; usize {
+        self.inner.lock().available_pages()
+    }
+}
+
+unsafe impl GlobalAlloc for GlobalAllocator {
+    unsafe fn alloc(&amp;self, layout: Layout) -&gt; *mut u8 {
+        if let Ok(ptr) = GlobalAllocator::alloc(self, layout) {
+            ptr.as_ptr()
+        } else {
+            alloc::alloc::handle_alloc_error(layout)
+        }
+    }
+
+    unsafe fn dealloc(&amp;self, ptr: *mut u8, layout: Layout) {
+        GlobalAllocator::dealloc(self, NonNull::new(ptr).expect(&quot;dealloc null ptr&quot;), layout)
+    }
+}
+
+#[cfg_attr(all(target_os = &quot;none&quot;, not(test)), global_allocator)]
+static GLOBAL_ALLOCATOR: GlobalAllocator = GlobalAllocator::new();
+
+/// Returns the reference to the global allocator.
+pub fn global_allocator() -&gt; &amp;'static GlobalAllocator {
+    &amp;GLOBAL_ALLOCATOR
+}
+
+/// Initializes the global allocator with the given memory region.
+pub fn global_init(start_vaddr: usize, size: usize) {
+    debug!(
+        &quot;initialize global allocator at: [{:#x}, {:#x})&quot;,
+        start_vaddr,
+        start_vaddr + size
+    );
+    GLOBAL_ALLOCATOR.init(start_vaddr, size);
+}
+
+/// Add the given memory region to the global allocator.
+pub fn global_add_memory(_start_vaddr: usize, _size: usize) -&gt; AllocResult {
+    unimplemented!()
+}
+<span class="boring">}</span></code></pre></pre>
+<p>上面已经给出了 axalloc 组件的主框架和对 crates/allocator/early 算法组件的调用，同时去除了其它算法，方便大家实验。</p>
+<p>现在，如果执行 <code>make ARCH=riscv64 A=apps/memtest LOG=debug run</code>，当然会出错。</p>
+<p>我们的实验目标就是实现 early 算法，算法描述见第一周第 2 次课程的 ppt。</p>
+<p><strong>要求</strong>：</p>
+<p>按照课程 ppt 的算法，从前往后字节分配，从后往前页分配。</p>
+<p><strong>提示</strong>：</p>
+<ol>
+<li>
+<p>modules/axalloc 组件要去调用实现在 crates/allocator 中的算法。现在其它算法都无效了，我们只要在crates/allocator/src/lib.rs 中增加如下几行，引入 early 模块，代表算法的类型为 EarlyAllocator。</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>mod early;
+pub use early::EarlyAllocator;
+<span class="boring">}</span></code></pre></pre>
+<p>新建 crates/allocator/src/early.rs，后面主要的逻辑实现都在这个模块中。</p>
+</li>
+<li>
+<p>可以参考禁用掉的 buddy/slab 等字节分配算法、bitmap 页分配算法，来实现 early 算法。正常来说，EarlyAllocator 需要实现像 BaseAllocator、ByteAllocator、PageAllocator 这三个 trait 来为 axalloc 提供调用服务，但为了实验方便，也可以不实现，直接为 EarlyAllocator 关联对应的方法即可。</p>
+</li>
+</ol>
+<p><strong>预期输出</strong>：</p>
+<p>执行 <code>make ARCH=riscv64 A=apps/memtest LOG=debug run</code>，输出</p>
+<div style="text-align:center">
+   <img src=".\img\1-2.png" alt="1-2" style="zoom:100%"/>
+</div>
+<p>注意：这个已分配的页面数正常就是 6，而显示的字节数可能与你执行时的情况不同，但不会是 0。</p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="练习4解析dtb并打印"><a class="header" href="#练习4解析dtb并打印">练习4：解析dtb并打印</a></h2>
+<p><strong>目标：</strong></p>
+<p>解析 dtb（FDT 的二进制格式），打印物理内存范围和所有的 virtio_mmio 范围。以 apps/memtest 为测试应用。</p>
+<p>当 ArceOS 启动时，上一级 SBI 向我们传递了 dtb 的指针，一直会被传递到 axruntime，我们就在 axruntime 中执行解析并打印。</p>
+<p>首先，在 /modules/axruntime/src/lib.rs 的r ust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>--- a/modules/axruntime/src/lib.rs
++++ b/modules/axruntime/src/lib.rs
+@@ -140,6 +140,20 @@ pub extern &quot;C&quot; fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
+     #[cfg(feature = &quot;alloc&quot;)]
+     init_allocator();
+
++    // Parse fdt for early memory info
++    let dtb_info = match parse_dtb(dtb.into()) {
++        Ok(info) =&gt; info,
++        Err(err) =&gt; panic!(&quot;Bad dtb {:?}&quot;, err),
++    };
++
++    info!(&quot;DTB info: ==================================&quot;);
++    info!(&quot;Memory: {:#x}, size: {:#x}&quot;, dtb_info.memory_addr, dtb_info.memory_size);
++    info!(&quot;Virtio_mmio[{}]:&quot;, dtb_info.mmio_regions.len());
++    for r in dtb_info.mmio_regions {
++        info!(&quot;\t{:#x}, size: {:#x}&quot;, r.0, r.1);
++    }
++    info!(&quot;============================================&quot;);
++
+     #[cfg(feature = &quot;paging&quot;)]
+     {
+         info!(&quot;Initialize kernel page table...&quot;);
+@@ -297,3 +311,74 @@ fn init_tls() {
+     unsafe { axhal::arch::write_thread_pointer(main_tls.tls_ptr() as usize) };
+     core::mem::forget(main_tls);
+ }
+<span class="boring">}</span></code></pre></pre>
+<p>关于 parse_dtb 和它的返回值类型，类似如下定义，你对它们的具体定义有所可以不同：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>extern crate alloc;
+
+use core::str;
+use alloc::string::String;
+use alloc::vec::Vec;
+use axdtb::util::SliceRead;
+
+// 参考类型定义
+struct DtbInfo {
+    memory_addr: usize,
+    memory_size: usize,
+    mmio_regions: Vec&lt;(usize, usize)&gt;,
+}
+
+// 参考函数原型
+fn parse_dtb(dtb_pa: usize) -&gt; Result&lt;DtbInfo&gt; {
+    // 这里就是对axdtb组件的调用，传入dtb指针，解析后输出结果。这个函数和axdtb留给大家实现
+}
+<span class="boring">}</span></code></pre></pre>
+<p>然后就是本实验的中心任务：modules 目录中增加一个 axdtb 的组件，它负责解析 dtb，获取目标信息。</p>
+<p><strong>提示</strong>：</p>
+<p>解析 dtb（FDT 的二进制格式）有点繁琐，但是网络上存在很多现成的 crate 实现，例如 crate.io 中。</p>
+<p>但是注意：有可能这些 crate 不直接符合我们的需要，需要改造。主要是很多实现都是以文件路径为输入，加载文件到内存后，再解析。我们只需要进行解析的那部分。</p>
+<p><strong>预期输出</strong>：</p>
+<p>执行 <code>make ARCH=riscv64 A=apps/memtest LOG=info run</code></p>
+<div style="text-align:center">
+   <img src=".\img\1-3.png" alt="1-3" style="zoom:80%"/>
+</div>
+<p>可以看到输出了解析 dtb 后的物理内存信息，和 virtio_mmio 区域信息。</p>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="练习5抢占式调度算法"><a class="header" href="#练习5抢占式调度算法">练习5：抢占式调度算法</a></h2>
+<h3 id="目标"><a class="header" href="#目标">目标</a></h3>
+<p>把协作式调度算法 fifo 改造为抢占式调度算法。让测试应用通过。</p>
+<h3 id="准备"><a class="header" href="#准备">准备</a></h3>
+<p><strong>首先</strong>，在 apps 下面增加一个测试应用 ex5，它的 main.rs 如下：</p>
+<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
+#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+
+#[macro_use]
+#[cfg(feature = &quot;axstd&quot;)]
+extern crate axstd as std;
+
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::thread;
+
+static FLAG: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+fn main() {
+    thread::spawn(move || {
+        println!(&quot;Spawned-thread is waiting ...&quot;);
+        while FLAG.load(Ordering::Relaxed) &lt; 1 {
+            // For cooperative scheduler, we must yield here!
+            // For preemptive scheduler, just relaxed! Leave it for scheduler.
+        }
+
+        let _ = FLAG.fetch_add(1, Ordering::Relaxed);
+    });
+
+    // Give spawned thread a chance to start.
+    thread::yield_now();
+
+    println!(&quot;Main thread set FLAG to notify spawned-thread to continue.&quot;);
+    let _ = FLAG.fetch_add(1, Ordering::Relaxed);
+    println!(&quot;Main thread waits spawned-thread to respond ...&quot;);
+    while FLAG.load(Ordering::Relaxed) &lt; 2 {
+        thread::yield_now();
+    }
+    println!(&quot;Preempt test run OK!&quot;);
+}</code></pre></pre>
+<p>ex5 的 Cargo.toml 的内容如下：</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>[package]
+name = &quot;ex5&quot;
+version = &quot;0.1.0&quot;
+edition = &quot;2021&quot;
+
+<span class="boring">See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+</span>
+[dependencies]
+axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;multitask&quot;, &quot;irq&quot;], optional = true }
+<span class="boring">}</span></code></pre></pre>
+<p>另外需要把 &quot;apps/ex5&quot; 加到**工程根目录 **Cargo.toml 的 [workspace] 下的 members 中。</p>
+<p><strong>然后</strong>，尝试运行一下，<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
+<div style="text-align:center">
+   <img src=".\img\1-4.png" alt="1-4" style="zoom:100%"/>
+</div>
+<p>这样<strong>会卡住!!!</strong></p>
+<p>原因就是默认调度策略 fifo 是协作式，大家可以参照 ex5 的应用逻辑想想。</p>
+<p>如果希望运行下去，有两个办法：</p>
+<p>一是加上 yield_now，如下</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>        while FLAG.load(Ordering::Relaxed) &lt; 1 {
+            // For cooperative scheduler, we must yield here!
+            // For preemptive scheduler, just relaxed! Leave it for scheduler.
+            // 在这里加 thread::yield_now();
+        }
+<span class="boring">}</span></code></pre></pre>
+<p>大家可以试试！</p>
+<p>二就是修改调度算法，也就是本练习的题目。<strong>注意</strong>：如果刚刚加上 yield_now 做实验了，现在别忘了删除这行:)</p>
+<h3 id="题目"><a class="header" href="#题目">题目</a></h3>
+<p><strong>要求</strong>：</p>
+<p>直接修改 crates/scheduler/src/fifo.rs，让 ex5 通过。</p>
+<p><strong>提示</strong>：</p>
+<ol>
+<li>可以比照 crates/scheduler/src/round_robin.rs 的实现进行修改。（请务必要做一遍!!!）</li>
+<li>虽然本题目简单，但是如何为修改后的 fifo 调度算法启用 feature &quot;preempt&quot;，可能有点小麻烦，看看 rr/cfs是怎么传递的。</li>
+</ol>
+<p><strong>预期</strong>：</p>
+<p>运行<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
+<div style="text-align:center">
+   <img src=".\img\1-5.png" alt="1-5" style="zoom:100%"/>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h2 id="前言"><a class="header" href="#前言">前言</a></h2>
 <p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第二周的练习内容，目标是在 ArceOS Unikernel OS 模式下，完成几个基本实验与附加练习，为支持多应用的实习任务做准备。</p>
 <ol>
 <li>基本实验：本指导书以增量的方式基本给出了 1 到 5 共 5 个实验的源码及过程，大家照着做一遍，以熟悉基本原理机制。</li>
@@ -188,7 +637,7 @@
 <li>成功的截图发到群里。</li>
 <li>仓库链接发邮件到 sun_ye@massclouds.com。<strong>注意</strong>：第一周发过邮件的同学，只要你的仓库未改，<strong>不用</strong>发邮件。我们保留了你们的仓库，可以直接去对应分支上查看各位的代码。所以请务必按照后面的要求建立分支和标记 commit 消息。</li>
 </ol>
-<h3 id="环境准备"><a class="header" href="#环境准备">环境准备</a></h3>
+<h3 id="环境准备-1"><a class="header" href="#环境准备-1">环境准备</a></h3>
 <ol>
 <li>
 <p>Fork ArceOS 的工程，clone 到本地。工程链接如下：</p>
@@ -240,7 +689,7 @@ Hello, world!
 <h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
 <p>实现加载器 loader，从外部加载 bin 应用到 ArceOS 地址空间。</p>
 <div style="text-align:center">
-   <img src=".\img\p1.svg" alt="p1" style="zoom:80%"/>
+   <img src=".\img\2-1.svg" alt="2-1" style="zoom:80%"/>
 </div>
 <h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
 <ol>
@@ -395,7 +844,7 @@ Load payload ok!
 <p>目前应用已经被加载到 pflash 的地址区间内，但是处于只读状态，一旦执行到写数据的指令时，就会触发异常。</p>
 <p>所以本实验的目标就是把应用搬运到可读可写可执行的内存区域。</p>
 <div style="text-align:center">
-   <img src=".\img\p2.svg" alt="p2" style="zoom:100%"/>
+   <img src=".\img\2-2.svg" alt="2-2" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤-1"><a class="header" href="#实验步骤-1">实验步骤</a></h3>
 <ol>
@@ -476,7 +925,7 @@ Priv: 1; Virt: 0
 <h3 id="实验目标-2"><a class="header" href="#实验目标-2">实验目标</a></h3>
 <p>到目前为止，我们的外部应用 hello_app 还无法做实际的事情。原因就是，这个应用是独立于 ArceOS 之外编译的单独 Image，现在 ArceOS 还没有为它提供调用接口。本实验中，我们先来做一个准备，为 ArceOS 增加简单的 ABI 接口支持，首先让内嵌应用 Loader 能够通过 ABI 方式调用功能；下个实验我们再进一步改成让外部应用通过ABI 调用功能。</p>
 <div style="text-align:center">
-   <img src=".\img\p3.svg" alt="p3" style="zoom:100%"/>
+   <img src=".\img\2-3.svg" alt="2-3" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤-2"><a class="header" href="#实验步骤-2">实验步骤</a></h3>
 <ol>
@@ -556,7 +1005,7 @@ QEMU: Terminated
 <h3 id="实验目标-3"><a class="header" href="#实验目标-3">实验目标</a></h3>
 <p>上个实验已经实现了 ABI 机制，本实验我们让外部应用正式使用 ABI。这里需要解决一个问题，外部应用必须获得 <strong>ABI 入口表的基地址</strong>，才能以调用号为偏移，找到对应的功能。因为 loader 是 ArceOS 的内嵌应用，知道这个地址，我们让它把地址传过来。</p>
 <div style="text-align:center">
-   <img src=".\img\p4.svg" alt="p4" style="zoom:100%"/>
+   <img src=".\img\2-4.svg" alt="2-4" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤-3"><a class="header" href="#实验步骤-3">实验步骤</a></h3>
 <ol>
@@ -645,7 +1094,7 @@ QEMU: Terminated
 <h3 id="实验目标-4"><a class="header" href="#实验目标-4">实验目标</a></h3>
 <p>目前，ArceOS Unikernel 是单地址空间。我们希望为每个外部应用建立独立的地址空间，当应用被调度时，切换到此应用的地址空间上。这样对每个应用，就可以采用固定的地址空间布局。现在从 0x4000_0000 地址开始的 1G 区域空闲，那我们就以它作为应用的地址空间。</p>
 <div style="text-align:center">
-   <img src=".\img\p5.svg" alt="p5" style="zoom:100%"/>
+   <img src=".\img\2-5.svg" alt="2-5" style="zoom:100%"/>
 </div>
 <h3 id="实验步骤-4"><a class="header" href="#实验步骤-4">实验步骤</a></h3>
 <ol>

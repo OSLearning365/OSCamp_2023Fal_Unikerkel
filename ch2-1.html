@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - unikernel practical tutorial</title>
-        <base href="/">
+        <title>实验1：从外部加载应用 - unikernel practical tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -89,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html" class="active"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -177,14 +176,172 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h2 id="实验1从外部加载应用"><a class="header" href="#实验1从外部加载应用">实验1：从外部加载应用</a></h2>
+<h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
+<p>实现加载器 loader，从外部加载 bin 应用到 ArceOS 地址空间。</p>
+<div style="text-align:center">
+   <img src=".\img\2-1.svg" alt="2-1" style="zoom:80%"/>
+</div>
+<h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
+<ol>
+<li>
+<p>编写一个 no_std 应用作为实验对象，命名为 hello_app，目录与 arceos 目录<strong>并列</strong>。它的主文件 main.rs 如下：</p>
+<pre><code class="language-rust ignore">#![no_std]
+#![no_main]
+
+use core::panic::PanicInfo;
+
+#[no_mangle]
+unsafe extern &quot;C&quot; fn _start() -&gt; ! {
+    core::arch::asm!(
+        &quot;wfi&quot;,
+        options(noreturn)
+    )
+}
+
+#[panic_handler]
+fn panic(_info: &amp;PanicInfo) -&gt; ! {
+    loop {}
+}</code></pre>
+<p>现在只有一行代码 <code>wfi</code>。</p>
+</li>
+<li>
+<p>在 hello_app 根目录下加一个 rust-toolchain.toml，内容如下：</p>
+<pre><code class="language-rust ignore">[toolchain]
+profile = &quot;minimal&quot;
+channel = &quot;nightly&quot;
+components = [&quot;rust-src&quot;, &quot;llvm-tools-preview&quot;, &quot;rustfmt&quot;, &quot;clippy&quot;]
+targets = [&quot;riscv64gc-unknown-none-elf&quot;]</code></pre>
+<p>定制默认的 toolchain，关键是指定 target = &quot;riscv64gc-unknown-none-elf&quot;，即 riscv64 体系结构的裸机程序。</p>
+</li>
+<li>
+<p>执行一系列命名，包括编译，转换和打包，生成可被 ArceOS 加载的 image。</p>
+<pre><code class="language-bash">cargo build --target riscv64gc-unknown-none-elf --release
+
+rust-objcopy --binary-architecture=riscv64 --strip-all -O binary target/riscv64gc-unknown-none-elf/release/hello_app ./hello_app.bin
+
+dd if=/dev/zero of=./apps.bin bs=1M count=32
+dd if=./hello_app.bin of=./apps.bin conv=notrunc
+
+mkdir -p ../arceos/payload
+mv ./apps.bin ../arceos/payload/apps.bin
+</code></pre>
+<p>得到image文件apps.bin，上面最后两步把它转移到arceos/payload目录下，以方便启动。</p>
+<blockquote>
+<p><font size=2>这步的一系列动作可以考虑写入一个shell脚本，便于今后执行。</font></p>
+</blockquote>
+</li>
+<li>
+<p>转移到 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。仿照 helloworld 应用创建，它的 main.rs 如下：</p>
+<pre><code class="language-rust ignore">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
+#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+
+#[cfg(feature = &quot;axstd&quot;)]
+use axstd::println;
+
+const PLASH_START: usize = 0x22000000;
+
+#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+fn main() {
+    let apps_start = PLASH_START as *const u8;
+    let apps_size = 32; // Dangerous!!! We need to get accurate size of apps.
+
+    println!(&quot;Load payload ...&quot;);
+
+    let code = unsafe { core::slice::from_raw_parts(apps_start, apps_size) };
+    println!(&quot;content: {:#x}&quot;, bytes_to_usize(&amp;code[..8]));
+
+    println!(&quot;Load payload ok!&quot;);
+}
+
+#[inline]
+fn bytes_to_usize(bytes: &amp;[u8]) -&gt; usize {
+    usize::from_be_bytes(bytes.try_into().unwrap())
+}</code></pre>
+<blockquote>
+<p><font size=2>注意：</font></p>
+<p><font size=2>1、qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
+<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }</font></p>
+</blockquote>
+</li>
+<li>
+<p>ArceOS 目前没有对 pflash 所在的地址空间进行映射，增加映射。</p>
+<p>在文件 modules/axhal/src/platform/riscv64_qemu_virt/boot.rs 中，恒等映射从 0 开始的 1G 空间。</p>
+<pre><code class="language-rust ignore">unsafe fn init_boot_page_table() {
+    // 0x8000_0000..0xc000_0000, VRWX_GAD, 1G block
+    BOOT_PT_SV39[2] = (0x80000 &lt;&lt; 10) | 0xef;
+    // 0xffff_ffc0_8000_0000..0xffff_ffc0_c000_0000, VRWX_GAD, 1G block
+    BOOT_PT_SV39[0x102] = (0x80000 &lt;&lt; 10) | 0xef;
+
+    // 0x0000_0000..0x4000_0000, VRWX_GAD, 1G block
+    BOOT_PT_SV39[0] = (0x00000 &lt;&lt; 10) | 0xef;
+}</code></pre>
+<blockquote>
+<p><font size=2>注意：只有最后两行是我们新增的映射，这样 ArceOS 就可以访问 pflash 所在的地址空间了。</font></p>
+</blockquote>
+</li>
+<li>
+<p>现在可以编译 ArceOS 了，修改一下 Makefile 的默认参数。看一下修改前后 diff 的结果：</p>
+<pre><code class="language-makefile"> # General options
+-ARCH ?= x86_64
++ARCH ?= riscv64
+
+ # App options
+-A ?= apps/helloworld
++A ?= apps/loader
+</code></pre>
+<p>默认 arch 改为 riscv64，默认应用改为 apps/loader 即我们的加载器。</p>
+</li>
+<li>
+<p>修改一下 qemu 的启动参数，让 pflash 加载之前的 image 就是那个 apps.bin，然后启动 ArceOS 内核及 loader 应用。</p>
+<p>修改 scripts/make/qemu.mk，在 qemu 启动参数中加上一项：</p>
+<pre><code class="language-makefile">-drive if=pflash,file=$(CURDIR)/payload/apps.bin,format=raw,unit=1
+</code></pre>
+<blockquote>
+<p><font size=2>注意：在 qemu.mk 文件中修改 qemu 启动参数的具体位置不是唯一的。</font></p>
+</blockquote>
+</li>
+<li>
+<p>把 apps/loader 加到根目录 Cargo.toml 中的 [workspace] 下的 members 列表中。执行 <code>make run</code> 测试。</p>
+<pre><code class="language-bash">arch = riscv64
+platform = riscv64-qemu-virt
+target = riscv64gc-unknown-none-elf
+smp = 1
+build_mode = release
+log_level = warn
+
+Load payload ...
+content: 0x7300501000000000
+Load payload ok!
+</code></pre>
+<p>注意打印的 content 就是测试应用 hello_app.bin 的内容，可以用如下命令确认：</p>
+<pre><code class="language-bash">xxd -ps ./hello_app.bin
+730050100000
+</code></pre>
+<p>对比后可发现内容一致，注意后续 0000 是 dd 命令产生的效果。</p>
+</li>
+</ol>
+<h3 id="练习"><a class="header" href="#练习">练习</a></h3>
+<h4 id="练习-1"><a class="header" href="#练习-1">练习 1：</a></h4>
+<p>main 函数中，固定设置 app_size = 32，这个显然是不合理甚至危险的。</p>
+<p>请为 image 设计一个头结构，包含应用的长度信息，loader 在加载应用时获取它的实际大小。</p>
+<p>执行通过。</p>
+<h4 id="练习-2"><a class="header" href="#练习-2">练习 2：</a></h4>
+<p>在练习 1 的基础上，扩展 image 头结构，让 image 可以包含两个应用。</p>
+<p>第二个应用包含唯一的汇编代码是 <code>ebreak</code>。</p>
+<p>如实验 1 的方式，打印出每一个应用的二进制代码。</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch2.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
 
+                            <a rel="next prefetch" href="ch2-2.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -192,7 +349,13 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch2.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
 
+                    <a rel="next prefetch" href="ch2-2.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
