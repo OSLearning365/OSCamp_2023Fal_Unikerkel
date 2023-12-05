@@ -229,7 +229,7 @@ edition = &quot;2021&quot;
 [dependencies]
 axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;multitask&quot;, &quot;irq&quot;], optional = true }
 <span class="boring">}</span></code></pre></pre>
-<p>另外需要把 &quot;apps/ex5&quot; 加到**工程根目录 **Cargo.toml 的 [workspace] 下的 members 中。</p>
+<p>另外需要把 &quot;apps/ex5&quot; 加到<strong>工程根目录</strong> Cargo.toml 的 [workspace] 下的 members 中。</p>
 <p><strong>然后</strong>，尝试运行一下，<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
 <div style="text-align:center">
    <img src=".\img\1-4.png" alt="1-4" style="zoom:100%"/>
