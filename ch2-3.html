@@ -196,11 +196,11 @@ fn register_abi(num: usize, handle: usize) {
 }
 
 fn abi_hello() {
-    println!(&quot;[ABI:Hello] Hello, Apps!&quot;);
+    println!("[ABI:Hello] Hello, Apps!");
 }
 
 fn abi_putchar(c: char) {
-    println!(&quot;[ABI:Print] {c}&quot;);
+    println!("[ABI:Print] {c}");
 }</code></pre>
 </li>
 <li>
@@ -211,11 +211,11 @@ fn abi_putchar(c: char) {
 </span>    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
-	println!(&quot;Execute app ...&quot;);
+	println!("Execute app ...");
     let arg0: u8 = b'A';
 
     // execute app
-    unsafe { core::arch::asm!(&quot;
+    unsafe { core::arch::asm!("
         li      t0, {abi_num}
         slli    t0, t0, 3
         la      t1, {abi_table}
@@ -224,12 +224,12 @@ fn abi_putchar(c: char) {
         jalr    t1
         li      t2, {run_start}
         jalr    t2
-        j       .&quot;,
+        j       .",
         run_start = const RUN_START,
         abi_table = sym ABI_TABLE,
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
-        in(&quot;a0&quot;) arg0,
+        in("a0") arg0,
     )}
 <span class="boring">}</span></code></pre></pre>
 <p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。如下是执行结果：</p>

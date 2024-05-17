@@ -180,32 +180,32 @@
 <p><strong>目标：</strong></p>
 <p>解析 dtb（FDT 的二进制格式），打印物理内存范围和所有的 virtio_mmio 范围。以 apps/memtest 为测试应用。</p>
 <p>当 ArceOS 启动时，上一级 SBI 向我们传递了 dtb 的指针，一直会被传递到 axruntime，我们就在 axruntime 中执行解析并打印。</p>
-<p>首先，在 /modules/axruntime/src/lib.rs 的r ust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
+<p>首先，在 /modules/axruntime/src/lib.rs 的 rust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>--- a/modules/axruntime/src/lib.rs
 +++ b/modules/axruntime/src/lib.rs
-@@ -140,6 +140,20 @@ pub extern &quot;C&quot; fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
-     #[cfg(feature = &quot;alloc&quot;)]
+@@ -140,6 +140,20 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
+     #[cfg(feature = "alloc")]
      init_allocator();
 
 +    // Parse fdt for early memory info
 +    let dtb_info = match parse_dtb(dtb.into()) {
 +        Ok(info) =&gt; info,
-+        Err(err) =&gt; panic!(&quot;Bad dtb {:?}&quot;, err),
++        Err(err) =&gt; panic!("Bad dtb {:?}", err),
 +    };
 +
-+    info!(&quot;DTB info: ==================================&quot;);
-+    info!(&quot;Memory: {:#x}, size: {:#x}&quot;, dtb_info.memory_addr, dtb_info.memory_size);
-+    info!(&quot;Virtio_mmio[{}]:&quot;, dtb_info.mmio_regions.len());
++    info!("DTB info: ==================================");
++    info!("Memory: {:#x}, size: {:#x}", dtb_info.memory_addr, dtb_info.memory_size);
++    info!("Virtio_mmio[{}]:", dtb_info.mmio_regions.len());
 +    for r in dtb_info.mmio_regions {
-+        info!(&quot;\t{:#x}, size: {:#x}&quot;, r.0, r.1);
++        info!("\t{:#x}, size: {:#x}", r.0, r.1);
 +    }
-+    info!(&quot;============================================&quot;);
++    info!("============================================");
 +
-     #[cfg(feature = &quot;paging&quot;)]
+     #[cfg(feature = "paging")]
      {
-         info!(&quot;Initialize kernel page table...&quot;);
+         info!("Initialize kernel page table...");
 @@ -297,3 +311,74 @@ fn init_tls() {
      unsafe { axhal::arch::write_thread_pointer(main_tls.tls_ptr() as usize) };
      core::mem::forget(main_tls);

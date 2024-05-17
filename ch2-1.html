@@ -192,9 +192,9 @@
 use core::panic::PanicInfo;
 
 #[no_mangle]
-unsafe extern &quot;C&quot; fn _start() -&gt; ! {
+unsafe extern "C" fn _start() -&gt; ! {
     core::arch::asm!(
-        &quot;wfi&quot;,
+        "wfi",
         options(noreturn)
     )
 }
@@ -208,11 +208,11 @@ fn panic(_info: &amp;PanicInfo) -&gt; ! {
 <li>
 <p>在 hello_app 根目录下加一个 rust-toolchain.toml，内容如下：</p>
 <pre><code class="language-rust ignore">[toolchain]
-profile = &quot;minimal&quot;
-channel = &quot;nightly&quot;
-components = [&quot;rust-src&quot;, &quot;llvm-tools-preview&quot;, &quot;rustfmt&quot;, &quot;clippy&quot;]
-targets = [&quot;riscv64gc-unknown-none-elf&quot;]</code></pre>
-<p>定制默认的 toolchain，关键是指定 target = &quot;riscv64gc-unknown-none-elf&quot;，即 riscv64 体系结构的裸机程序。</p>
+profile = "minimal"
+channel = "nightly"
+components = ["rust-src", "llvm-tools-preview", "rustfmt", "clippy"]
+targets = ["riscv64gc-unknown-none-elf"]</code></pre>
+<p>定制默认的 toolchain，关键是指定 target = "riscv64gc-unknown-none-elf"，即 riscv64 体系结构的裸机程序。</p>
 </li>
 <li>
 <p>执行一系列命名，包括编译，转换和打包，生成可被 ArceOS 加载的 image。</p>
@@ -233,25 +233,25 @@ mv ./apps.bin ../arceos/payload/apps.bin
 </li>
 <li>
 <p>转移到 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。仿照 helloworld 应用创建，它的 main.rs 如下：</p>
-<pre><code class="language-rust ignore">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
-#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+<pre><code class="language-rust ignore">#![cfg_attr(feature = "axstd", no_std)]
+#![cfg_attr(feature = "axstd", no_main)]
 
-#[cfg(feature = &quot;axstd&quot;)]
+#[cfg(feature = "axstd")]
 use axstd::println;
 
 const PLASH_START: usize = 0x22000000;
 
-#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     let apps_start = PLASH_START as *const u8;
     let apps_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
-    println!(&quot;Load payload ...&quot;);
+    println!("Load payload ...");
 
     let code = unsafe { core::slice::from_raw_parts(apps_start, apps_size) };
-    println!(&quot;content: {:#x}&quot;, bytes_to_usize(&amp;code[..8]));
+    println!("content: {:#x}", bytes_to_usize(&amp;code[..8]));
 
-    println!(&quot;Load payload ok!&quot;);
+    println!("Load payload ok!");
 }
 
 #[inline]
@@ -261,7 +261,7 @@ fn bytes_to_usize(bytes: &amp;[u8]) -&gt; usize {
 <blockquote>
 <p><font size=2>注意：</font></p>
 <p><font size=2>1、qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
-<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }</font></p>
+<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = "../../ulib/axstd", optional = true }</font></p>
 </blockquote>
 </li>
 <li>

@@ -179,16 +179,16 @@
                         <h2 id="练习3为内存分配器实现新的内存算法"><a class="header" href="#练习3为内存分配器实现新的内存算法">练习3：为内存分配器实现新的内存算法</a></h2>
 <p><strong>目标：</strong></p>
 <p>为内存分配器实现新的内存算法 early，禁用其它算法。early 分配算法以 apps/memtest 为测试应用。</p>
-<p>**首先，**为 memtest 增加 feature = &quot;paging&quot;，便于查看对 Page 的分配情况。修改 apps/memtest/Cargo.toml，对比变动如下</p>
-<pre><code class="language-toml">-axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;], optional = true }
-+axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;paging&quot;], optional = true }
+<p>**首先，**为 memtest 增加 feature = "paging"，便于查看对 Page 的分配情况。修改 apps/memtest/Cargo.toml，对比变动如下</p>
+<pre><code class="language-toml">-axstd = { path = "../../ulib/axstd", features = ["alloc"], optional = true }
++axstd = { path = "../../ulib/axstd", features = ["alloc", "paging"], optional = true }
 </code></pre>
 <p>**然后，**修改 modules/axruntime/src/lib.rs 增加下面几行，对比变动：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>+    {
 +        let ga = axalloc::global_allocator();
-+        info!(&quot;Used pages {} / Used bytes {}&quot;, ga.used_pages(), ga.used_bytes());
++        info!("Used pages {} / Used bytes {}", ga.used_pages(), ga.used_bytes());
 +    }
      unsafe { main() };
 <span class="boring">}</span></code></pre></pre>
@@ -228,7 +228,7 @@ impl GlobalAllocator {
 
     /// Returns the name of the allocator.
     pub const fn name(&amp;self) -&gt; &amp;'static str {
-        &quot;early&quot;
+        "early"
     }
 
     /// Initializes the allocator with the given region.
@@ -294,11 +294,11 @@ unsafe impl GlobalAlloc for GlobalAllocator {
     }
 
     unsafe fn dealloc(&amp;self, ptr: *mut u8, layout: Layout) {
-        GlobalAllocator::dealloc(self, NonNull::new(ptr).expect(&quot;dealloc null ptr&quot;), layout)
+        GlobalAllocator::dealloc(self, NonNull::new(ptr).expect("dealloc null ptr"), layout)
     }
 }
 
-#[cfg_attr(all(target_os = &quot;none&quot;, not(test)), global_allocator)]
+#[cfg_attr(all(target_os = "none", not(test)), global_allocator)]
 static GLOBAL_ALLOCATOR: GlobalAllocator = GlobalAllocator::new();
 
 /// Returns the reference to the global allocator.
@@ -309,7 +309,7 @@ pub fn global_allocator() -&gt; &amp;'static GlobalAllocator {
 /// Initializes the global allocator with the given memory region.
 pub fn global_init(start_vaddr: usize, size: usize) {
     debug!(
-        &quot;initialize global allocator at: [{:#x}, {:#x})&quot;,
+        "initialize global allocator at: [{:#x}, {:#x})",
         start_vaddr,
         start_vaddr + size
     );

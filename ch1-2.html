@@ -187,7 +187,7 @@
 
  fn test_vec(rng: &amp;mut impl RngCore) {
 @@ -22,9 +22,9 @@ fn test_vec(rng: &amp;mut impl RngCore) {
-     println!(&quot;test_vec() OK!&quot;);
+     println!("test_vec() OK!");
  }
 
 -fn test_btree_map(rng: &amp;mut impl RngCore) {
@@ -197,16 +197,16 @@
 +    let mut m = HashMap::new();
      for _ in 0..N {
          let value = rng.next_u32();
-         let key = format!(&quot;key_{value}&quot;);
+         let key = format!("key_{value}");
 @@ -35,7 +35,7 @@ fn test_btree_map(rng: &amp;mut impl RngCore) {
              assert_eq!(k.parse::&lt;u32&gt;().unwrap(), *v);
          }
      }
--    println!(&quot;test_btree_map() OK!&quot;);
-+    println!(&quot;test_hashmap_map() OK!&quot;);
+-    println!("test_btree_map() OK!");
++    println!("test_hashmap_map() OK!");
  }
 
- #[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+ #[cfg_attr(feature = "axstd", no_mangle)]
 @@ -44,7 +44,7 @@ fn main() {
 
      let mut rng = SmallRng::seed_from_u64(0xdead_beef);
@@ -214,7 +214,7 @@
 -    test_btree_map(&amp;mut rng);
 +    test_hashmap_map(&amp;mut rng);
 
-     println!(&quot;Memory tests run OK!&quot;);
+     println!("Memory tests run OK!");
  }
 </code></pre>
 <p>然后，尝试编译运行，<code>make A=apps/memtest ARCH=riscv64 run</code>，此时会报错，因为我们目前不支持HashMap 类型。</p>

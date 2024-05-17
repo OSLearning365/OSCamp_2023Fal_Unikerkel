@@ -187,15 +187,15 @@
 <ol>
 <li>
 <p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的 main.rs （这里只给出增量代码）。</p>
-<pre><code class="language-rust ignore">#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+<pre><code class="language-rust ignore">#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
-    println!(&quot;Load payload ...&quot;);
+    println!("Load payload ...");
 
     let load_code = unsafe { core::slice::from_raw_parts(load_start, load_size) };
-    println!(&quot;load code {:?}; address [{:?}]&quot;, load_code, load_code.as_ptr());
+    println!("load code {:?}; address [{:?}]", load_code, load_code.as_ptr());
 
     // app running aspace
     // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
@@ -206,9 +206,9 @@ fn main() {
         core::slice::from_raw_parts_mut(RUN_START as *mut u8, load_size)
     };
     run_code.copy_from_slice(load_code);
-    println!(&quot;run code {:?}; address [{:?}]&quot;, run_code, run_code.as_ptr());
+    println!("run code {:?}; address [{:?}]", run_code, run_code.as_ptr());
 
-    println!(&quot;Load payload ok!&quot;);
+    println!("Load payload ok!");
 }</code></pre>
 <p><code>make run</code> 显示如下，代码被正常拷贝到目标区域。</p>
 <pre><code class="language-bash">arch = riscv64
@@ -226,16 +226,16 @@ Load payload ok!
 </li>
 <li>
 <p>然后从新的位置开始执行 App 的逻辑，在上面main函数的末尾追加代码执行。</p>
-<pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
+<pre><code class="language-rust ignore">    println!("Execute app ...");
 
     // execute app
-    unsafe { core::arch::asm!(&quot;
+    unsafe { core::arch::asm!("
         li      t2, {run_start}
         jalr    t2
-        j       .&quot;,
+        j       .",
         run_start = const RUN_START,
     )}</code></pre>
-<p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
+<p><code>make run</code> 显示 "Execute app ..." 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
 <blockquote>
 <p><font size=2>如果提示需要 #![feature(asm_const)] 之类的支持，按照提示处理。</font></p>
 <p><font size=2>另：qemu 卡住后，退出到命令行的按键是，Ctrl+a 后按 x。</font></p>

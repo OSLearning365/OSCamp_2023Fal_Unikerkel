@@ -181,11 +181,11 @@
 <p>把协作式调度算法 fifo 改造为抢占式调度算法。让测试应用通过。</p>
 <h3 id="准备"><a class="header" href="#准备">准备</a></h3>
 <p><strong>首先</strong>，在 apps 下面增加一个测试应用 ex5，它的 main.rs 如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
-#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = "axstd", no_std)]
+#![cfg_attr(feature = "axstd", no_main)]
 
 #[macro_use]
-#[cfg(feature = &quot;axstd&quot;)]
+#[cfg(feature = "axstd")]
 extern crate axstd as std;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -193,10 +193,10 @@ use std::thread;
 
 static FLAG: AtomicUsize = AtomicUsize::new(0);
 
-#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     thread::spawn(move || {
-        println!(&quot;Spawned-thread is waiting ...&quot;);
+        println!("Spawned-thread is waiting ...");
         while FLAG.load(Ordering::Relaxed) &lt; 1 {
             // For cooperative scheduler, we must yield here!
             // For preemptive scheduler, just relaxed! Leave it for scheduler.
@@ -208,28 +208,28 @@ fn main() {
     // Give spawned thread a chance to start.
     thread::yield_now();
 
-    println!(&quot;Main thread set FLAG to notify spawned-thread to continue.&quot;);
+    println!("Main thread set FLAG to notify spawned-thread to continue.");
     let _ = FLAG.fetch_add(1, Ordering::Relaxed);
-    println!(&quot;Main thread waits spawned-thread to respond ...&quot;);
+    println!("Main thread waits spawned-thread to respond ...");
     while FLAG.load(Ordering::Relaxed) &lt; 2 {
         thread::yield_now();
     }
-    println!(&quot;Preempt test run OK!&quot;);
+    println!("Preempt test run OK!");
 }</code></pre></pre>
 <p>ex5 的 Cargo.toml 的内容如下：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>[package]
-name = &quot;ex5&quot;
-version = &quot;0.1.0&quot;
-edition = &quot;2021&quot;
+name = "ex5"
+version = "0.1.0"
+edition = "2021"
 
 <span class="boring">See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 </span>
 [dependencies]
-axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;multitask&quot;, &quot;irq&quot;], optional = true }
+axstd = { path = "../../ulib/axstd", features = ["alloc", "multitask", "irq"], optional = true }
 <span class="boring">}</span></code></pre></pre>
-<p>另外需要把 &quot;apps/ex5&quot; 加到<strong>工程根目录</strong> Cargo.toml 的 [workspace] 下的 members 中。</p>
+<p>另外需要把 "apps/ex5" 加到<strong>工程根目录</strong> Cargo.toml 的 [workspace] 下的 members 中。</p>
 <p><strong>然后</strong>，尝试运行一下，<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
 <div style="text-align:center">
    <img src=".\img\1-4.png" alt="1-4" style="zoom:100%"/>
@@ -254,7 +254,7 @@ axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &q
 <p><strong>提示</strong>：</p>
 <ol>
 <li>可以比照 crates/scheduler/src/round_robin.rs 的实现进行修改。（请务必要做一遍!!!）</li>
-<li>虽然本题目简单，但是如何为修改后的 fifo 调度算法启用 feature &quot;preempt&quot;，可能有点小麻烦，看看 rr/cfs是怎么传递的。</li>
+<li>虽然本题目简单，但是如何为修改后的 fifo 调度算法启用 feature "preempt"，可能有点小麻烦，看看 rr/cfs是怎么传递的。</li>
 </ol>
 <p><strong>预期</strong>：</p>
 <p>运行<code>make ARCH=riscv64 A=apps/ex5 run</code></p>

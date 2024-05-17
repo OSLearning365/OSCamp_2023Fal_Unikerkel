@@ -178,7 +178,7 @@
                 <div id="content" class="content">
                     <main>
                         <h2 id="第一周"><a class="header" href="#第一周">第一周</a></h2>
-<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第一周的练习内容，包含 5 个基本练习。</p>
+<p>本实验指导是为 2024 春夏季 OS 训练营第三阶段 - 项目1：ArceOS 单内核 Unikernel 方向，而做的前期准备。这是第一周的练习内容，包含 5 个基本练习。</p>
 <p>对完练习的过程要求：</p>
 <ol>
 <li>按照下节 <em><strong>环境准备</strong></em> 要求建立分支。</li>
@@ -234,7 +234,7 @@
 
  fn test_vec(rng: &amp;mut impl RngCore) {
 @@ -22,9 +22,9 @@ fn test_vec(rng: &amp;mut impl RngCore) {
-     println!(&quot;test_vec() OK!&quot;);
+     println!("test_vec() OK!");
  }
 
 -fn test_btree_map(rng: &amp;mut impl RngCore) {
@@ -244,16 +244,16 @@
 +    let mut m = HashMap::new();
      for _ in 0..N {
          let value = rng.next_u32();
-         let key = format!(&quot;key_{value}&quot;);
+         let key = format!("key_{value}");
 @@ -35,7 +35,7 @@ fn test_btree_map(rng: &amp;mut impl RngCore) {
              assert_eq!(k.parse::&lt;u32&gt;().unwrap(), *v);
          }
      }
--    println!(&quot;test_btree_map() OK!&quot;);
-+    println!(&quot;test_hashmap_map() OK!&quot;);
+-    println!("test_btree_map() OK!");
++    println!("test_hashmap_map() OK!");
  }
 
- #[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+ #[cfg_attr(feature = "axstd", no_mangle)]
 @@ -44,7 +44,7 @@ fn main() {
 
      let mut rng = SmallRng::seed_from_u64(0xdead_beef);
@@ -261,7 +261,7 @@
 -    test_btree_map(&amp;mut rng);
 +    test_hashmap_map(&amp;mut rng);
 
-     println!(&quot;Memory tests run OK!&quot;);
+     println!("Memory tests run OK!");
  }
 </code></pre>
 <p>然后，尝试编译运行，<code>make A=apps/memtest ARCH=riscv64 run</code>，此时会报错，因为我们目前不支持HashMap 类型。</p>
@@ -325,16 +325,16 @@ pub fn random() -&gt; u128 {
 <div style="break-before: page; page-break-before: always;"></div><h2 id="练习3为内存分配器实现新的内存算法"><a class="header" href="#练习3为内存分配器实现新的内存算法">练习3：为内存分配器实现新的内存算法</a></h2>
 <p><strong>目标：</strong></p>
 <p>为内存分配器实现新的内存算法 early，禁用其它算法。early 分配算法以 apps/memtest 为测试应用。</p>
-<p>**首先，**为 memtest 增加 feature = &quot;paging&quot;，便于查看对 Page 的分配情况。修改 apps/memtest/Cargo.toml，对比变动如下</p>
-<pre><code class="language-toml">-axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;], optional = true }
-+axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;paging&quot;], optional = true }
+<p>**首先，**为 memtest 增加 feature = "paging"，便于查看对 Page 的分配情况。修改 apps/memtest/Cargo.toml，对比变动如下</p>
+<pre><code class="language-toml">-axstd = { path = "../../ulib/axstd", features = ["alloc"], optional = true }
++axstd = { path = "../../ulib/axstd", features = ["alloc", "paging"], optional = true }
 </code></pre>
 <p>**然后，**修改 modules/axruntime/src/lib.rs 增加下面几行，对比变动：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>+    {
 +        let ga = axalloc::global_allocator();
-+        info!(&quot;Used pages {} / Used bytes {}&quot;, ga.used_pages(), ga.used_bytes());
++        info!("Used pages {} / Used bytes {}", ga.used_pages(), ga.used_bytes());
 +    }
      unsafe { main() };
 <span class="boring">}</span></code></pre></pre>
@@ -374,7 +374,7 @@ impl GlobalAllocator {
 
     /// Returns the name of the allocator.
     pub const fn name(&amp;self) -&gt; &amp;'static str {
-        &quot;early&quot;
+        "early"
     }
 
     /// Initializes the allocator with the given region.
@@ -440,11 +440,11 @@ unsafe impl GlobalAlloc for GlobalAllocator {
     }
 
     unsafe fn dealloc(&amp;self, ptr: *mut u8, layout: Layout) {
-        GlobalAllocator::dealloc(self, NonNull::new(ptr).expect(&quot;dealloc null ptr&quot;), layout)
+        GlobalAllocator::dealloc(self, NonNull::new(ptr).expect("dealloc null ptr"), layout)
     }
 }
 
-#[cfg_attr(all(target_os = &quot;none&quot;, not(test)), global_allocator)]
+#[cfg_attr(all(target_os = "none", not(test)), global_allocator)]
 static GLOBAL_ALLOCATOR: GlobalAllocator = GlobalAllocator::new();
 
 /// Returns the reference to the global allocator.
@@ -455,7 +455,7 @@ pub fn global_allocator() -&gt; &amp;'static GlobalAllocator {
 /// Initializes the global allocator with the given memory region.
 pub fn global_init(start_vaddr: usize, size: usize) {
     debug!(
-        &quot;initialize global allocator at: [{:#x}, {:#x})&quot;,
+        "initialize global allocator at: [{:#x}, {:#x})",
         start_vaddr,
         start_vaddr + size
     );
@@ -504,32 +504,32 @@ pub use early::EarlyAllocator;
 <p><strong>目标：</strong></p>
 <p>解析 dtb（FDT 的二进制格式），打印物理内存范围和所有的 virtio_mmio 范围。以 apps/memtest 为测试应用。</p>
 <p>当 ArceOS 启动时，上一级 SBI 向我们传递了 dtb 的指针，一直会被传递到 axruntime，我们就在 axruntime 中执行解析并打印。</p>
-<p>首先，在 /modules/axruntime/src/lib.rs 的r ust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
+<p>首先，在 /modules/axruntime/src/lib.rs 的 rust_main 函数中，插入如下代码以显示获取到的信息，diff 内容如下：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>--- a/modules/axruntime/src/lib.rs
 +++ b/modules/axruntime/src/lib.rs
-@@ -140,6 +140,20 @@ pub extern &quot;C&quot; fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
-     #[cfg(feature = &quot;alloc&quot;)]
+@@ -140,6 +140,20 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -&gt; ! {
+     #[cfg(feature = "alloc")]
      init_allocator();
 
 +    // Parse fdt for early memory info
 +    let dtb_info = match parse_dtb(dtb.into()) {
 +        Ok(info) =&gt; info,
-+        Err(err) =&gt; panic!(&quot;Bad dtb {:?}&quot;, err),
++        Err(err) =&gt; panic!("Bad dtb {:?}", err),
 +    };
 +
-+    info!(&quot;DTB info: ==================================&quot;);
-+    info!(&quot;Memory: {:#x}, size: {:#x}&quot;, dtb_info.memory_addr, dtb_info.memory_size);
-+    info!(&quot;Virtio_mmio[{}]:&quot;, dtb_info.mmio_regions.len());
++    info!("DTB info: ==================================");
++    info!("Memory: {:#x}, size: {:#x}", dtb_info.memory_addr, dtb_info.memory_size);
++    info!("Virtio_mmio[{}]:", dtb_info.mmio_regions.len());
 +    for r in dtb_info.mmio_regions {
-+        info!(&quot;\t{:#x}, size: {:#x}&quot;, r.0, r.1);
++        info!("\t{:#x}, size: {:#x}", r.0, r.1);
 +    }
-+    info!(&quot;============================================&quot;);
++    info!("============================================");
 +
-     #[cfg(feature = &quot;paging&quot;)]
+     #[cfg(feature = "paging")]
      {
-         info!(&quot;Initialize kernel page table...&quot;);
+         info!("Initialize kernel page table...");
 @@ -297,3 +311,74 @@ fn init_tls() {
      unsafe { axhal::arch::write_thread_pointer(main_tls.tls_ptr() as usize) };
      core::mem::forget(main_tls);
@@ -579,11 +579,11 @@ fn parse_dtb(dtb_pa: usize) -&gt; Result&lt;DtbInfo&gt; {
 <p>把协作式调度算法 fifo 改造为抢占式调度算法。让测试应用通过。</p>
 <h3 id="准备"><a class="header" href="#准备">准备</a></h3>
 <p><strong>首先</strong>，在 apps 下面增加一个测试应用 ex5，它的 main.rs 如下：</p>
-<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
-#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+<pre><pre class="playground"><code class="language-rust edition2021">#![cfg_attr(feature = "axstd", no_std)]
+#![cfg_attr(feature = "axstd", no_main)]
 
 #[macro_use]
-#[cfg(feature = &quot;axstd&quot;)]
+#[cfg(feature = "axstd")]
 extern crate axstd as std;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -591,10 +591,10 @@ use std::thread;
 
 static FLAG: AtomicUsize = AtomicUsize::new(0);
 
-#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     thread::spawn(move || {
-        println!(&quot;Spawned-thread is waiting ...&quot;);
+        println!("Spawned-thread is waiting ...");
         while FLAG.load(Ordering::Relaxed) &lt; 1 {
             // For cooperative scheduler, we must yield here!
             // For preemptive scheduler, just relaxed! Leave it for scheduler.
@@ -606,28 +606,28 @@ fn main() {
     // Give spawned thread a chance to start.
     thread::yield_now();
 
-    println!(&quot;Main thread set FLAG to notify spawned-thread to continue.&quot;);
+    println!("Main thread set FLAG to notify spawned-thread to continue.");
     let _ = FLAG.fetch_add(1, Ordering::Relaxed);
-    println!(&quot;Main thread waits spawned-thread to respond ...&quot;);
+    println!("Main thread waits spawned-thread to respond ...");
     while FLAG.load(Ordering::Relaxed) &lt; 2 {
         thread::yield_now();
     }
-    println!(&quot;Preempt test run OK!&quot;);
+    println!("Preempt test run OK!");
 }</code></pre></pre>
 <p>ex5 的 Cargo.toml 的内容如下：</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>[package]
-name = &quot;ex5&quot;
-version = &quot;0.1.0&quot;
-edition = &quot;2021&quot;
+name = "ex5"
+version = "0.1.0"
+edition = "2021"
 
 <span class="boring">See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 </span>
 [dependencies]
-axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &quot;multitask&quot;, &quot;irq&quot;], optional = true }
+axstd = { path = "../../ulib/axstd", features = ["alloc", "multitask", "irq"], optional = true }
 <span class="boring">}</span></code></pre></pre>
-<p>另外需要把 &quot;apps/ex5&quot; 加到<strong>工程根目录</strong> Cargo.toml 的 [workspace] 下的 members 中。</p>
+<p>另外需要把 "apps/ex5" 加到<strong>工程根目录</strong> Cargo.toml 的 [workspace] 下的 members 中。</p>
 <p><strong>然后</strong>，尝试运行一下，<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
 <div style="text-align:center">
    <img src=".\img\1-4.png" alt="1-4" style="zoom:100%"/>
@@ -652,7 +652,7 @@ axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &q
 <p><strong>提示</strong>：</p>
 <ol>
 <li>可以比照 crates/scheduler/src/round_robin.rs 的实现进行修改。（请务必要做一遍!!!）</li>
-<li>虽然本题目简单，但是如何为修改后的 fifo 调度算法启用 feature &quot;preempt&quot;，可能有点小麻烦，看看 rr/cfs是怎么传递的。</li>
+<li>虽然本题目简单，但是如何为修改后的 fifo 调度算法启用 feature "preempt"，可能有点小麻烦，看看 rr/cfs是怎么传递的。</li>
 </ol>
 <p><strong>预期</strong>：</p>
 <p>运行<code>make ARCH=riscv64 A=apps/ex5 run</code></p>
@@ -667,7 +667,7 @@ axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &q
         async>
 </script>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="第二周"><a class="header" href="#第二周">第二周</a></h2>
-<p>本实验指导是为 2023 秋季 OS 训练营第三阶段 - 项目1：Unikernel 方向，而做的前期准备。这是第二周的练习内容，目标是在 ArceOS Unikernel OS 模式下，完成几个基本实验与附加练习，为支持多应用的实习任务做准备。</p>
+<p>本实验指导是为 2024 春夏季 OS 训练营第三阶段 - 项目1：ArceOS 单内核 Unikernel 方向，而做的前期准备。这是第二周的练习内容，目标是在 ArceOS Unikernel OS 模式下，完成几个基本实验与附加练习，为支持多应用的实习任务做准备。</p>
 <ol>
 <li>基本实验：本指导书以增量的方式基本给出了 1 到 5 共 5 个实验的源码及过程，大家照着做一遍，以熟悉基本原理机制。</li>
 <li>附加练习：基于基本实验，根据自己的理解，增加一些实现，以达到练习要求目标。总共 6 个练习。</li>
@@ -694,25 +694,25 @@ axstd = { path = &quot;../../ulib/axstd&quot;, features = [&quot;alloc&quot;, &q
 <pre><code class="language-bash">git checkout main
 git checkout -b week2_base
 </code></pre>
-<p>这个分支对应<strong>基本实验</strong>。开始实验时，每完成一个，就 commit  一次，commit msg 是 &quot;step N&quot;，N 是实验序号。</p>
+<p>这个分支对应<strong>基本实验</strong>。开始实验时，每完成一个，就 commit  一次，commit msg 是 "step N"，N 是实验序号。</p>
 </li>
 <li>
 <p>建立并切换到分支 week2_exercise：</p>
 <pre><code class="language-bash">git checkout main
 git checkout -b week2_exercise
 </code></pre>
-<p>这个分支对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 &quot;exercise N&quot;，N 是练习序号。</p>
+<p>这个分支对应<strong>附加练习</strong>。根据每个附加练习的要求完成，每完成一个，commit 一次，commit msg 是 "exercise N"，N 是练习序号。</p>
 </li>
 <li>
 <p>执行 <code>make run ARCH=riscv64</code> 测试一下环境，我们的实习平台是 <strong>riscv64-qemu-virt</strong>。</p>
 <pre><code class="language-bash">       d8888                            .d88888b.   .d8888b.
-      d88888                           d88P&quot; &quot;Y88b d88P  Y88b
+      d88888                           d88P" "Y88b d88P  Y88b
      d88P888                           888     888 Y88b.
-    d88P 888 888d888  .d8888b  .d88b.  888     888  &quot;Y888b.
-   d88P  888 888P&quot;   d88P&quot;    d8P  Y8b 888     888     &quot;Y88b.
-  d88P   888 888     888      88888888 888     888       &quot;888
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
  d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
-d88P     888 888      &quot;Y8888P  &quot;Y8888   &quot;Y88888P&quot;   &quot;Y8888P&quot;
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
 
 arch = riscv64
 platform = riscv64-qemu-virt
@@ -749,9 +749,9 @@ Hello, world!
 use core::panic::PanicInfo;
 
 #[no_mangle]
-unsafe extern &quot;C&quot; fn _start() -&gt; ! {
+unsafe extern "C" fn _start() -&gt; ! {
     core::arch::asm!(
-        &quot;wfi&quot;,
+        "wfi",
         options(noreturn)
     )
 }
@@ -765,11 +765,11 @@ fn panic(_info: &amp;PanicInfo) -&gt; ! {
 <li>
 <p>在 hello_app 根目录下加一个 rust-toolchain.toml，内容如下：</p>
 <pre><code class="language-rust ignore">[toolchain]
-profile = &quot;minimal&quot;
-channel = &quot;nightly&quot;
-components = [&quot;rust-src&quot;, &quot;llvm-tools-preview&quot;, &quot;rustfmt&quot;, &quot;clippy&quot;]
-targets = [&quot;riscv64gc-unknown-none-elf&quot;]</code></pre>
-<p>定制默认的 toolchain，关键是指定 target = &quot;riscv64gc-unknown-none-elf&quot;，即 riscv64 体系结构的裸机程序。</p>
+profile = "minimal"
+channel = "nightly"
+components = ["rust-src", "llvm-tools-preview", "rustfmt", "clippy"]
+targets = ["riscv64gc-unknown-none-elf"]</code></pre>
+<p>定制默认的 toolchain，关键是指定 target = "riscv64gc-unknown-none-elf"，即 riscv64 体系结构的裸机程序。</p>
 </li>
 <li>
 <p>执行一系列命名，包括编译，转换和打包，生成可被 ArceOS 加载的 image。</p>
@@ -790,25 +790,25 @@ mv ./apps.bin ../arceos/payload/apps.bin
 </li>
 <li>
 <p>转移到 ArceOS 工程，在 apps 目录下，实现一个新的 app，名为 loader。仿照 helloworld 应用创建，它的 main.rs 如下：</p>
-<pre><code class="language-rust ignore">#![cfg_attr(feature = &quot;axstd&quot;, no_std)]
-#![cfg_attr(feature = &quot;axstd&quot;, no_main)]
+<pre><code class="language-rust ignore">#![cfg_attr(feature = "axstd", no_std)]
+#![cfg_attr(feature = "axstd", no_main)]
 
-#[cfg(feature = &quot;axstd&quot;)]
+#[cfg(feature = "axstd")]
 use axstd::println;
 
 const PLASH_START: usize = 0x22000000;
 
-#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     let apps_start = PLASH_START as *const u8;
     let apps_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
-    println!(&quot;Load payload ...&quot;);
+    println!("Load payload ...");
 
     let code = unsafe { core::slice::from_raw_parts(apps_start, apps_size) };
-    println!(&quot;content: {:#x}&quot;, bytes_to_usize(&amp;code[..8]));
+    println!("content: {:#x}", bytes_to_usize(&amp;code[..8]));
 
-    println!(&quot;Load payload ok!&quot;);
+    println!("Load payload ok!");
 }
 
 #[inline]
@@ -818,7 +818,7 @@ fn bytes_to_usize(bytes: &amp;[u8]) -&gt; usize {
 <blockquote>
 <p><font size=2>注意：</font></p>
 <p><font size=2>1、qemu 有两个 pflash，其中第一个被保留做扩展的 bios，我们只能用第二个，它的开始地址 0x22000000。</font></p>
-<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }</font></p>
+<p><font size=2>2、创建 loader 应用后，注意在 Cargo.toml 中增加依赖：axstd = { path = "../../ulib/axstd", optional = true }</font></p>
 </blockquote>
 </li>
 <li>
@@ -905,15 +905,15 @@ Load payload ok!
 <ol>
 <li>
 <p>从 pflash 区域拷贝到 0x8010_0000，即 Kernel 前面 1M 处作为应用的执行区，改造一下 loader 的 main.rs （这里只给出增量代码）。</p>
-<pre><code class="language-rust ignore">#[cfg_attr(feature = &quot;axstd&quot;, no_mangle)]
+<pre><code class="language-rust ignore">#[cfg_attr(feature = "axstd", no_mangle)]
 fn main() {
     let load_start = PLASH_START as *const u8;
     let load_size = 32; // Dangerous!!! We need to get accurate size of apps.
 
-    println!(&quot;Load payload ...&quot;);
+    println!("Load payload ...");
 
     let load_code = unsafe { core::slice::from_raw_parts(load_start, load_size) };
-    println!(&quot;load code {:?}; address [{:?}]&quot;, load_code, load_code.as_ptr());
+    println!("load code {:?}; address [{:?}]", load_code, load_code.as_ptr());
 
     // app running aspace
     // SBI(0x80000000) -&gt; App &lt;- Kernel(0x80200000)
@@ -924,9 +924,9 @@ fn main() {
         core::slice::from_raw_parts_mut(RUN_START as *mut u8, load_size)
     };
     run_code.copy_from_slice(load_code);
-    println!(&quot;run code {:?}; address [{:?}]&quot;, run_code, run_code.as_ptr());
+    println!("run code {:?}; address [{:?}]", run_code, run_code.as_ptr());
 
-    println!(&quot;Load payload ok!&quot;);
+    println!("Load payload ok!");
 }</code></pre>
 <p><code>make run</code> 显示如下，代码被正常拷贝到目标区域。</p>
 <pre><code class="language-bash">arch = riscv64
@@ -944,16 +944,16 @@ Load payload ok!
 </li>
 <li>
 <p>然后从新的位置开始执行 App 的逻辑，在上面main函数的末尾追加代码执行。</p>
-<pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
+<pre><code class="language-rust ignore">    println!("Execute app ...");
 
     // execute app
-    unsafe { core::arch::asm!(&quot;
+    unsafe { core::arch::asm!("
         li      t2, {run_start}
         jalr    t2
-        j       .&quot;,
+        j       .",
         run_start = const RUN_START,
     )}</code></pre>
-<p><code>make run</code> 显示 &quot;Execute app ...&quot; 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
+<p><code>make run</code> 显示 "Execute app ..." 之后卡住了，但这是正常的，注意汇编最后一句是无限循环。</p>
 <blockquote>
 <p><font size=2>如果提示需要 #![feature(asm_const)] 之类的支持，按照提示处理。</font></p>
 <p><font size=2>另：qemu 卡住后，退出到命令行的按键是，Ctrl+a 后按 x。</font></p>
@@ -1003,11 +1003,11 @@ fn register_abi(num: usize, handle: usize) {
 }
 
 fn abi_hello() {
-    println!(&quot;[ABI:Hello] Hello, Apps!&quot;);
+    println!("[ABI:Hello] Hello, Apps!");
 }
 
 fn abi_putchar(c: char) {
-    println!(&quot;[ABI:Print] {c}&quot;);
+    println!("[ABI:Print] {c}");
 }</code></pre>
 </li>
 <li>
@@ -1018,11 +1018,11 @@ fn abi_putchar(c: char) {
 </span>    register_abi(SYS_HELLO, abi_hello as usize);
     register_abi(SYS_PUTCHAR, abi_putchar as usize);
 
-	println!(&quot;Execute app ...&quot;);
+	println!("Execute app ...");
     let arg0: u8 = b'A';
 
     // execute app
-    unsafe { core::arch::asm!(&quot;
+    unsafe { core::arch::asm!("
         li      t0, {abi_num}
         slli    t0, t0, 3
         la      t1, {abi_table}
@@ -1031,12 +1031,12 @@ fn abi_putchar(c: char) {
         jalr    t1
         li      t2, {run_start}
         jalr    t2
-        j       .&quot;,
+        j       .",
         run_start = const RUN_START,
         abi_table = sym ABI_TABLE,
         //abi_num = const SYS_HELLO,
         abi_num = const SYS_PUTCHAR,
-        in(&quot;a0&quot;) arg0,
+        in("a0") arg0,
     )}
 <span class="boring">}</span></code></pre></pre>
 <p>可以看到，在启动应用之前，我们在 loader 本地先测试了 <strong>SYS_PUTCHAR</strong> 的功能调用。如下是执行结果：</p>
@@ -1080,14 +1080,14 @@ QEMU: Terminated
 <ol>
 <li>
 <p>在 loader 的 main 函数中，把直接调用 abi 的代码删除，改为如下代码：</p>
-<pre><code class="language-rust ignore">    println!(&quot;Execute app ...&quot;);
+<pre><code class="language-rust ignore">    println!("Execute app ...");
 
     // execute app
-    unsafe { core::arch::asm!(&quot;
+    unsafe { core::arch::asm!("
         la      a7, {abi_table}
         li      t2, {run_start}
         jalr    t2
-        j       .&quot;,
+        j       .",
         run_start = const RUN_START,
         abi_table = sym ABI_TABLE,
     )}</code></pre>
@@ -1103,17 +1103,17 @@ QEMU: Terminated
 const SYS_PUTCHAR: usize = 2;
 
 #[no_mangle]
-unsafe extern &quot;C&quot; fn _start() -&gt; ! {
+unsafe extern "C" fn _start() -&gt; ! {
     let arg0: u8 = b'C';
-    core::arch::asm!(&quot;
+    core::arch::asm!("
         li      t0, {abi_num}
         slli    t0, t0, 3
         add     t1, a7, t0
         ld      t1, (t1)
         jalr    t1
-        wfi&quot;,
+        wfi",
         abi_num = const SYS_PUTCHAR,
-        in(&quot;a0&quot;) arg0,
+        in("a0") arg0,
         options(noreturn),
     )
 }
@@ -1180,7 +1180,7 @@ QEMU: Terminated
 // App aspace
 //
 
-#[link_section = &quot;.data.app_page_table&quot;]
+#[link_section = ".data.app_page_table"]
 static mut APP_PT_SV39: [u64; 512] = [0; 512];
 
 unsafe fn init_app_page_table() {
@@ -1203,7 +1203,7 @@ unsafe fn switch_app_aspace() {
     satp::set(satp::Mode::Sv39, 0, page_table_root &gt;&gt; 12);
     riscv::asm::sfence_vma_all();
 }</code></pre>
-<p>APP_PT_SV39 的链接位置 &quot;.data.app_page_table&quot;，定义在 modules/axhal/linker.lds.S 中：</p>
+<p>APP_PT_SV39 的链接位置 ".data.app_page_table"，定义在 modules/axhal/linker.lds.S 中：</p>
 <pre><code class="language-rust ignore">         _sdata = .;
          *(.data.boot_page_table)
          . = ALIGN(4K);
@@ -1215,11 +1215,11 @@ unsafe fn switch_app_aspace() {
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>[dependencies]
-axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
-axconfig = { path = &quot;../../modules/axconfig&quot; }
+axstd = { path = "../../ulib/axstd", optional = true }
+axconfig = { path = "../../modules/axconfig" }
 
-[target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;
+[target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
+riscv = "0.10"
 <span class="boring">}</span></code></pre></pre>
 </li>
 <li>

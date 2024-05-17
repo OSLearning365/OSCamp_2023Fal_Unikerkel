@@ -190,7 +190,7 @@
 // App aspace
 //
 
-#[link_section = &quot;.data.app_page_table&quot;]
+#[link_section = ".data.app_page_table"]
 static mut APP_PT_SV39: [u64; 512] = [0; 512];
 
 unsafe fn init_app_page_table() {
@@ -213,7 +213,7 @@ unsafe fn switch_app_aspace() {
     satp::set(satp::Mode::Sv39, 0, page_table_root &gt;&gt; 12);
     riscv::asm::sfence_vma_all();
 }</code></pre>
-<p>APP_PT_SV39 的链接位置 &quot;.data.app_page_table&quot;，定义在 modules/axhal/linker.lds.S 中：</p>
+<p>APP_PT_SV39 的链接位置 ".data.app_page_table"，定义在 modules/axhal/linker.lds.S 中：</p>
 <pre><code class="language-rust ignore">         _sdata = .;
          *(.data.boot_page_table)
          . = ALIGN(4K);
@@ -225,11 +225,11 @@ unsafe fn switch_app_aspace() {
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>[dependencies]
-axstd = { path = &quot;../../ulib/axstd&quot;, optional = true }
-axconfig = { path = &quot;../../modules/axconfig&quot; }
+axstd = { path = "../../ulib/axstd", optional = true }
+axconfig = { path = "../../modules/axconfig" }
 
-[target.'cfg(any(target_arch = &quot;riscv32&quot;, target_arch = &quot;riscv64&quot;))'.dependencies]
-riscv = &quot;0.10&quot;
+[target.'cfg(any(target_arch = "riscv32", target_arch = "riscv64"))'.dependencies]
+riscv = "0.10"
 <span class="boring">}</span></code></pre></pre>
 </li>
 <li>
