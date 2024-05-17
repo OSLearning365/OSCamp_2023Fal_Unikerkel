@@ -469,9 +469,12 @@ pub fn global_add_memory(_start_vaddr: usize, _size: usize) -&gt; AllocResult {
 <span class="boring">}</span></code></pre></pre>
 <p>上面已经给出了 axalloc 组件的主框架和对 crates/allocator/early 算法组件的调用，同时去除了其它算法，方便大家实验。</p>
 <p>现在，如果执行 <code>make ARCH=riscv64 A=apps/memtest LOG=debug run</code>，当然会出错。</p>
-<p>我们的实验目标就是实现 early 算法，算法描述见第一周第 2 次课程的 ppt。</p>
+<p>我们的实验目标就是实现 early 算法，如下：</p>
+<div style="text-align:center">
+   <img src=".\img\1-2-0.svg" alt="1-2-0" style="zoom:50%"/>
+</div>
 <p><strong>要求</strong>：</p>
-<p>按照课程 ppt 的算法，从前往后字节分配，从后往前页分配。</p>
+<p>从前往后字节分配，从后往前页分配。</p>
 <p><strong>提示</strong>：</p>
 <ol>
 <li>
