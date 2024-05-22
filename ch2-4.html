@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>FAQ - unikernel practical tutorial</title>
+        <title>实验4：正式在App中调用ABI - unikernel practical tutorial</title>
 
 
         <!-- Custom HTML head -->
@@ -88,7 +88,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li><li class="chapter-item expanded "><a href="ch9.html"><strong aria-hidden="true">3.</strong> 附录</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch9-1.html" class="active"><strong aria-hidden="true">3.1.</strong> FAQ</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1.html"><strong aria-hidden="true">1.</strong> 第一周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch1-1.html"><strong aria-hidden="true">1.1.</strong> 练习1：支持彩色打印println!</a></li><li class="chapter-item expanded "><a href="ch1-2.html"><strong aria-hidden="true">1.2.</strong> 练习2：支持HashMap数据类型</a></li><li class="chapter-item expanded "><a href="ch1-3.html"><strong aria-hidden="true">1.3.</strong> 练习3：为内存分配器实现新的内存算法</a></li><li class="chapter-item expanded "><a href="ch1-4.html"><strong aria-hidden="true">1.4.</strong> 练习4：解析dtb并打印</a></li><li class="chapter-item expanded "><a href="ch1-5.html"><strong aria-hidden="true">1.5.</strong> 练习5：抢占式调度算法</a></li></ol></li><li class="chapter-item expanded "><a href="ch2.html"><strong aria-hidden="true">2.</strong> 第二周</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch2-1.html"><strong aria-hidden="true">2.1.</strong> 实验1：从外部加载应用</a></li><li class="chapter-item expanded "><a href="ch2-2.html"><strong aria-hidden="true">2.2.</strong> 实验2：把应用拷贝到执行区域并执行</a></li><li class="chapter-item expanded "><a href="ch2-3.html"><strong aria-hidden="true">2.3.</strong> 实验3：通过ABI调用ArceOS功能</a></li><li class="chapter-item expanded "><a href="ch2-4.html" class="active"><strong aria-hidden="true">2.4.</strong> 实验4：正式在App中调用ABI</a></li><li class="chapter-item expanded "><a href="ch2-5.html"><strong aria-hidden="true">2.5.</strong> 实验5：支持内核和应用分离的地址空间及切换</a></li></ol></li><li class="chapter-item expanded "><a href="ch9.html"><strong aria-hidden="true">3.</strong> 附录</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch9-1.html"><strong aria-hidden="true">3.1.</strong> FAQ</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -176,12 +176,95 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h2 id="faq"><a class="header" href="#faq">FAQ</a></h2>
-<h4 id="问题1"><a class="header" href="#问题1">问题1</a></h4>
-<p>运行ArceOS时，提示：Unable to load the RISC-V firmware"opensbi-riscv64-generic-fw_dynamic.bin'</p>
-<h5 id="解决思路"><a class="header" href="#解决思路"><strong>解决思路：</strong></a></h5>
-<p>Qemu版本过低，需求使用Qemu8或更高版本。</p>
-<p>说明：各个发行版Qemu有差别。如果是Unbuntu22.04，直接apt install安装就可以。如果自己编译，使用Qemu官网最新版本。</p>
+                        <h2 id="实验4正式在-app-中调用-abi"><a class="header" href="#实验4正式在-app-中调用-abi">实验4：正式在 App 中调用 ABI</a></h2>
+<h3 id="实验目标"><a class="header" href="#实验目标">实验目标</a></h3>
+<p>上个实验已经实现了 ABI 机制，本实验我们让外部应用正式使用 ABI。这里需要解决一个问题，外部应用必须获得 <strong>ABI 入口表的基地址</strong>，才能以调用号为偏移，找到对应的功能。因为 loader 是 ArceOS 的内嵌应用，知道这个地址，我们让它把地址传过来。</p>
+<div style="text-align:center">
+   <img src=".\img\2-4.svg" alt="2-4" style="zoom:100%"/>
+</div>
+<h3 id="实验步骤"><a class="header" href="#实验步骤">实验步骤</a></h3>
+<ol>
+<li>
+<p>在 loader 的 main 函数中，把直接调用 abi 的代码删除，改为如下代码：</p>
+<pre><code class="language-rust ignore">    println!("Execute app ...");
+
+    // execute app
+    unsafe { core::arch::asm!("
+        la      a7, {abi_table}
+        li      t2, {run_start}
+        jalr    t2
+        j       .",
+        run_start = const RUN_START,
+        abi_table = sym ABI_TABLE,
+    )}</code></pre>
+<p>loader 不再调用 abi，只是把 ABI_TABLE 的地址传给外部应用 hello_app。注意：我们传递地址用的是 a7 寄存器。</p>
+</li>
+<li>
+<p>应用 hello_app 通过 ABI 获取 ArceOS 服务，修改它的 main.rs：</p>
+<pre><code class="language-rust ignore">#![feature(asm_const)]
+#![no_std]
+#![no_main]
+
+//const SYS_HELLO: usize = 1;
+const SYS_PUTCHAR: usize = 2;
+
+#[no_mangle]
+unsafe extern "C" fn _start() -&gt; ! {
+    let arg0: u8 = b'C';
+    core::arch::asm!("
+        li      t0, {abi_num}
+        slli    t0, t0, 3
+        add     t1, a7, t0
+        ld      t1, (t1)
+        jalr    t1
+        wfi",
+        abi_num = const SYS_PUTCHAR,
+        in("a0") arg0,
+        options(noreturn),
+    )
+}
+
+use core::panic::PanicInfo;
+
+#[panic_handler]
+fn panic(_info: &amp;PanicInfo) -&gt; ! {
+    loop {}
+}</code></pre>
+<p>可以看到，我们从 a7 寄存器获得了 ABI_TABLE 的基地址，再结合调用号就可以获得对应功能的入口。</p>
+<blockquote>
+<p><font size=2>   注意：调用号乘以 8 才是偏移（64 位系统的函数指针 8 个字节）。</font></p>
+</blockquote>
+</li>
+<li>
+<p><strong>重新执行</strong> hello_app 的编译转换步骤，见实验 1 的第 3 步。</p>
+<p>之前如果已经把步骤写入 shell 脚本，这步就比较简单。</p>
+</li>
+<li>
+<p>执行 <code>make run</code>，测试结果：</p>
+<pre><code class="language-sh">Execute app ...
+[ABI:Print] C
+QEMU: Terminated
+</code></pre>
+<p>打印字符 'C'，成功！</p>
+</li>
+</ol>
+<h3 id="练习"><a class="header" href="#练习">练习</a></h3>
+<h4 id="练习-5"><a class="header" href="#练习-5">练习 5：</a></h4>
+<p>按照如下要求改造应用 hello_app：</p>
+<ol>
+<li>
+<p>把三个功能调用的汇编实现封装为函数，以普通函数方式调用。例如，SYS_PUTCHAR 封装为 <code>fn putchar(c: char)</code>。</p>
+</li>
+<li>
+<p>基于打印字符函数 putchar 实现一个高级函数 <code>fn puts(s: &amp;str)</code>，可以支持输出字符串。</p>
+</li>
+<li>
+<p>应用 hello_app 的执行顺序是：Hello 功能、打印字符串功能、退出功能。</p>
+</li>
+</ol>
+<blockquote>
+<p><font size=2>别忘了应用修改后，还要执行实验 1 的第 3 步完成编译转换和覆盖旧应用。如果当时封装了 shell 脚本，这步比较方便。</font></p>
+</blockquote>
 <script src="https://utteranc.es/client.js"
         repo="OSLearning365/blog-issues"
         issue-term="pathname"
@@ -194,10 +277,13 @@
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="ch9.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="ch2-3.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="ch2-5.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -205,10 +291,13 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="ch9.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="ch2-3.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="ch2-5.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
