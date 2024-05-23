@@ -1325,10 +1325,17 @@ Execute app ...
 </script>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="faq"><a class="header" href="#faq">FAQ</a></h2>
 <h4 id="问题1"><a class="header" href="#问题1">问题1</a></h4>
-<p>运行ArceOS时，提示：Unable to load the RISC-V firmware"opensbi-riscv64-generic-fw_dynamic.bin'</p>
+<p>运行 ArceOS 时，提示：Unable to load the RISC-V firmware"opensbi-riscv64-generic-fw_dynamic.bin'</p>
 <h5 id="解决思路"><a class="header" href="#解决思路"><strong>解决思路：</strong></a></h5>
-<p>Qemu版本过低，需求使用Qemu8或更高版本。</p>
-<p>说明：各个发行版Qemu有差别。如果是Unbuntu22.04，直接apt install安装就可以。如果自己编译，使用Qemu官网最新版本。</p>
+<p>Qemu 版本过低，需求使用 Qemu8 或更高版本。</p>
+<p>说明：各个发行版 Qemu 有差别。如果是 Unbuntu22.04，直接 apt install 安装就可以。如果自己编译，使用 Qemu 官网最新版本。</p>
+<h4 id="问题2"><a class="header" href="#问题2">问题2</a></h4>
+<p>在完成练习 3 内存分配的时候碰到一个段错误，一般从哪入手可以排查？</p>
+<p><strong>解决思路：</strong></p>
+<p>内存方面异常确实都比较难查。</p>
+<p>方法 1：打开 Qemu 日志，看一下 Makefile 中有个环境变量 QEMU_LOG，make 时设置成 y 就可以产生 qemu.log，看看发生异常时，对应的各个寄存器状况，汇编代码执行到的位置，另外还要配合看看内核 image 的各段分区。
+方法2：使用 rcore 实验常用的办法 gdb 跟踪。如果 gdb 用的好的话可以试试。
+方法3： print 方法。gdb 是一个比较好的方法。如果对命令行不熟悉，可以尝试基于 vscode 调试，但需要比较麻烦的配置。</p>
 <script src="https://utteranc.es/client.js"
         repo="OSLearning365/blog-issues"
         issue-term="pathname"
